@@ -49,6 +49,7 @@ target("PrismaPhotoMode")
     add_files("src/main.cpp")
     add_headerfiles("src/*.h")
     add_includedirs("src")
+    set_pcxxheader("src/PCH.h")
 
     add_defines("COMMONLIB_RUNTIMECOUNT=3", "F4SE_EXPORTS", "WIN32_LEAN_AND_MEAN", "NOMINMAX")
     add_syslinks("bcrypt", "version", "comctl32")
