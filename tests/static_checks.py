@@ -15,7 +15,7 @@ REQUIRED_IDS = (
     "fx-grid", "fx-vignette", "fx-tint", "fx-grain", "fx-frame",
     "fx-letterbox-top", "fx-letterbox-bottom", "fx-letterbox-left", "fx-letterbox-right",
     "overlay-category", "overlay-name", "fx-overlay", "grid-kind", "time-freeze", "timemult", "timemult-out", "hour", "hour-out", "timescale", "timescale-out",
-    "weather-select", "weather-clear-btn",
+    "weather-select", "weather-clear-btn", "panel-scale", "panel-scale-out",
 )
 NATIVE_COMMANDS = ("fov", "speed", "focus", "screenshot", "reset", "exit", "freeze", "timemult", "hour", "timescale", "weather", "lists")
 KEPT_OVERLAYS = ("#fx-vignette", "#fx-tint", "#fx-grain", "#fx-frame", "#fx-letterbox")

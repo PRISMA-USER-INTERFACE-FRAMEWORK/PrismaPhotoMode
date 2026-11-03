@@ -14,7 +14,7 @@
   };
 
   const $ = (id) => document.getElementById(id);
-  const state = { focused: false, shooting: false, overlays: [] };
+  const state = { focused: false, shooting: false, active: false, panelScaleDefault: 100, overlays: [] };
 
   function nativeCall(name, arg = "") {
     const fn = window[name];
@@ -116,6 +116,12 @@
     $("focus-btn").textContent = focused ? "Release to camera" : "Take mouse";
   }
 
+  function applyPanelScale(percent) {
+    $("panel-scale").value = percent;
+    $("panel-scale-out").textContent = percent;
+    document.documentElement.style.setProperty("--panel-scale", String(percent / 100));
+  }
+
   function toggleFocus() {
     command(state.focused ? "focus|0" : "focus|1");
   }
@@ -171,6 +177,11 @@
       console.error("pmSetState: bad payload", error);
       return;
     }
+    const leaving = state.active && !data.active;
+    state.active = Boolean(data.active);
+    if (typeof data.panelScale === "number") state.panelScaleDefault = data.panelScale;
+    if (leaving) resetEffects();
+    if (!state.active) applyPanelScale(state.panelScaleDefault);
     setFocusUi(Boolean(data.focused));
     if (typeof data.fov === "number") syncSlider("fov", "fov-out", data.fov, 0);
     if (typeof data.speed === "number") syncSlider("speed", "speed-out", data.speed, 2);
@@ -310,11 +321,100 @@
 
   document.addEventListener("keydown", (event) => {
     if (!state.focused) return;
+    if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+      event.preventDefault();
+      moveFocus(event.key === "ArrowUp" ? -1 : 1);
+      return;
+    }
     if (event.key !== "Escape" && event.key !== "Tab") return;
     event.preventDefault();
     if (!event.repeat) command("focus|0");
   });
 
+  function focusable() {
+    return Array.from(document.querySelectorAll("#panel button, #panel input, #panel select"))
+      .filter((el) => !el.disabled && el.getClientRects().length > 0);
+  }
+
+  function moveFocus(step) {
+    const items = focusable();
+    if (!items.length) return;
+    const current = items.indexOf(document.activeElement);
+    let next = step > 0 ? 0 : items.length - 1;
+    if (current >= 0) next = (current + step + items.length) % items.length;
+    items[next].focus();
+  }
+
+  function focusedInPanel() {
+    const el = document.activeElement;
+    return el && el.closest && el.closest("#panel") ? el : null;
+  }
+
+  function stepFocused(direction) {
+    const el = focusedInPanel();
+    if (!el) return;
+    if (el.tagName === "INPUT" && el.type === "range") {
+      if (direction > 0) {
+        el.stepUp();
+      } else {
+        el.stepDown();
+      }
+    } else if (el.tagName === "SELECT") {
+      el.selectedIndex = Math.max(0, Math.min(el.options.length - 1, el.selectedIndex + direction));
+    } else {
+      return;
+    }
+    el.dispatchEvent(new Event("input"));
+    el.dispatchEvent(new Event("change"));
+  }
+
+  function activateFocused() {
+    const el = focusedInPanel();
+    if (el && (el.tagName === "BUTTON" || el.type === "checkbox")) el.click();
+  }
+
+  function switchTab(direction) {
+    const tabs = Array.from(document.querySelectorAll(".tab"));
+    const current = tabs.findIndex((tab) => tab.getAttribute("aria-selected") === "true");
+    tabs[(current + direction + tabs.length) % tabs.length].click();
+  }
+
+  const PAD = { a: 0, b: 1, lb: 4, rb: 5, up: 12, down: 13, left: 14, right: 15 };
+  const padHeld = [];
+
+  function padEdge(pad, index) {
+    const now = Boolean(pad?.buttons?.[index]?.pressed);
+    const was = padHeld[index];
+    padHeld[index] = now;
+    return now && !was;
+  }
+
+  function pollGamepad() {
+    const pad = Array.from(navigator.getGamepads?.() ?? []).find(Boolean);
+    const up = padEdge(pad, PAD.up);
+    const down = padEdge(pad, PAD.down);
+    const left = padEdge(pad, PAD.left);
+    const right = padEdge(pad, PAD.right);
+    const a = padEdge(pad, PAD.a);
+    const b = padEdge(pad, PAD.b);
+    const lb = padEdge(pad, PAD.lb);
+    const rb = padEdge(pad, PAD.rb);
+    if (state.focused && !state.shooting) {
+      if (up) moveFocus(-1);
+      if (down) moveFocus(1);
+      if (left) stepFocused(-1);
+      if (right) stepFocused(1);
+      if (a) activateFocused();
+      if (b) command("focus|0");
+      if (lb) switchTab(-1);
+      if (rb) switchTab(1);
+    }
+    window.requestAnimationFrame(pollGamepad);
+  }
+
+  $("panel-scale").addEventListener("input", (event) => applyPanelScale(Number(event.target.value)));
+
   window.addEventListener("resize", applyLetterbox);
   resetEffects();
+  pollGamepad();
 })();

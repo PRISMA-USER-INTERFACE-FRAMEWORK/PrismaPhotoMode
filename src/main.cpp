@@ -49,11 +49,17 @@ namespace
     constexpr float kMaxTimescale = 1000.0F;
     constexpr std::uint32_t kDefaultToggleKey = 0x78;
     constexpr std::uint32_t kDefaultFocusKey = 0x09;
+    constexpr std::uint32_t kDefaultFocusPadButton = 0x10020;
+    constexpr int kDefaultPanelScale = 100;
+    constexpr int kMinPanelScale = 50;
+    constexpr int kMaxPanelScale = 200;
 
     struct Settings
     {
         std::uint32_t toggleKey{ kDefaultToggleKey };
         std::uint32_t focusKey{ kDefaultFocusKey };
+        std::uint32_t focusPadButton{ kDefaultFocusPadButton };
+        int panelScale{ kDefaultPanelScale };
     };
 
     Settings g_settings{};
@@ -74,6 +80,11 @@ namespace
     {
         g_settings.toggleKey = ReadKey("ToggleKey", kDefaultToggleKey);
         g_settings.focusKey = ReadKey("FocusKey", kDefaultFocusKey);
+        g_settings.focusPadButton = GetPrivateProfileIntA("General", "FocusPadButton", static_cast<int>(kDefaultFocusPadButton), kIniPath);
+        g_settings.panelScale = std::clamp(
+            static_cast<int>(GetPrivateProfileIntA("General", "PanelScale", kDefaultPanelScale, kIniPath)),
+            kMinPanelScale,
+            kMaxPanelScale);
     }
 
     bool ViewReady()
@@ -87,7 +98,7 @@ namespace
         const bool active = PPM::PhotoMode::Active();
         const bool focused = active && g_api->HasFocus(g_view);
         const auto json = std::format(
-            R"({{"active":{},"focused":{},"fov":{:.1f},"speed":{:.2f},"frozen":{},"timeMult":{:.2f},"hour":{:.2f},"timescale":{:.1f},"timeReady":{}}})",
+            R"({{"active":{},"focused":{},"fov":{:.1f},"speed":{:.2f},"frozen":{},"timeMult":{:.2f},"hour":{:.2f},"timescale":{:.1f},"timeReady":{},"panelScale":{}}})",
             active ? "true" : "false",
             focused ? "true" : "false",
             PPM::PhotoMode::CurrentFOV(),
@@ -96,7 +107,8 @@ namespace
             PPM::PhotoMode::TimeMultiplier(),
             PPM::PhotoMode::GameHour(),
             PPM::PhotoMode::TimescaleMultiplier(),
-            PPM::RuntimeSupport::TimeControlsAvailable() ? "true" : "false");
+            PPM::RuntimeSupport::TimeControlsAvailable() ? "true" : "false",
+            g_settings.panelScale);
         g_api->InteropCall(g_view, kStateCallback, json.c_str());
     }
 
@@ -142,6 +154,7 @@ namespace
             g_api->Hide(g_view);
         }
         PPM::PhotoMode::Exit();
+        PushState();
     }
 
     bool ParseFloat(std::string_view a_text, float& a_value)
@@ -197,7 +210,6 @@ namespace
             PushLists();
         } else if (name == "exit") {
             ExitMode();
-            PushState();
         } else {
             spdlog::warn("PrismaPhotoMode: unknown or malformed command '{}'", name);
         }
@@ -226,7 +238,15 @@ namespace
 
         void OnButtonEvent(const RE::ButtonEvent* a_event) override
         {
-            if (!a_event || !a_event->QJustPressed() || a_event->device.get() != RE::INPUT_DEVICE::kKeyboard) return;
+            if (!a_event || !a_event->QJustPressed()) return;
+
+            if (a_event->device.get() == RE::INPUT_DEVICE::kGamepad) {
+                if (g_settings.focusPadButton != 0 && a_event->idCode == g_settings.focusPadButton && PPM::PhotoMode::Active()) {
+                    SetFocus(!(ViewReady() && g_api->HasFocus(g_view)));
+                }
+                return;
+            }
+            if (a_event->device.get() != RE::INPUT_DEVICE::kKeyboard) return;
 
             if (a_event->idCode == g_settings.toggleKey) {
                 if (PPM::PhotoMode::Active()) {

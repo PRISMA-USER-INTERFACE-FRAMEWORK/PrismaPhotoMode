@@ -4,6 +4,7 @@
   --tint-alpha: 0.2;
   --grain: 0.35;
   --frame: 40px;
+  --panel-scale: 1;
 }
 
 html,
@@ -176,6 +177,8 @@ body {
   padding: 12px;
   background: rgba(12, 14, 18, 0.86);
   border: 1px solid rgba(255, 255, 255, 0.14);
+  transform: scale(var(--panel-scale));
+  transform-origin: top right;
 }
 
 #panel header {

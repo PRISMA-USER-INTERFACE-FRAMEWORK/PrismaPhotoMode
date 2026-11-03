@@ -35,6 +35,7 @@
       <button type="button" class="tab" data-tab="camera" aria-selected="true">Camera</button>
       <button type="button" class="tab" data-tab="time" aria-selected="false">Time</button>
       <button type="button" class="tab" data-tab="overlays" aria-selected="false">Overlays</button>
+      <button type="button" class="tab" data-tab="access" aria-selected="false">Access</button>
     </nav>
 
     <div data-tab-panel="camera">
@@ -135,6 +136,17 @@
         <label>Overlay
           <select id="overlay-name"><option value="">None</option></select>
         </label>
+      </section>
+    </div>
+
+    <div data-tab-panel="access" hidden>
+      <section>
+        <h2>Access</h2>
+        <label>Panel scale <output id="panel-scale-out">100</output>%
+          <input id="panel-scale" type="range" min="50" max="200" step="5" value="100">
+        </label>
+        <p>Mouse: click the panel. Keyboard: Up and Down move between controls, Left and Right change sliders, Tab or Escape releases the panel.</p>
+        <p>Gamepad: D-pad moves, A activates, LB and RB switch tabs, B releases the panel.</p>
       </section>
     </div>
 

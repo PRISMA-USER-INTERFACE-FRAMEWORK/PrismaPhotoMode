@@ -17,6 +17,7 @@ Based on PhotoModeF4 by powerof3 (MIT). See `THIRD_PARTY_NOTICES`.
 
 - F9 (`ToggleKey`) enters or leaves photo mode.
 - Tab (`FocusKey`) gives the panel the mouse and keyboard. Tab or Escape releases them so the camera gets input again.
+- Back (`FocusPadButton`) gives or releases the panel on a gamepad. In the panel, the D-pad moves, A activates, LB and RB switch tabs, and B releases.
 
 ## Configuration
 
@@ -24,6 +25,8 @@ Based on PhotoModeF4 by powerof3 (MIT). See `THIRD_PARTY_NOTICES`.
 
 - `ToggleKey`: Windows virtual-key code for entering and leaving photo mode. Default 120 (F9).
 - `FocusKey`: virtual-key code for focus. Default 9 (Tab).
+- `FocusPadButton`: gamepad button code for focus. Default 65568 (Back, 0x10020). 0 disables it.
+- `PanelScale`: panel size in percent, 50 to 200. Default 100. The Access tab changes it until photo mode closes.
 
 ## Status
 
