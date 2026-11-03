@@ -222,13 +222,13 @@ namespace
         auto menu = ui->GetMenu<RE::PauseMenu>();
         if (!menu || !menu->uiMovie) return false;
         auto& movie = menu->uiMovie;
-        RE::Scaleform::GFx::Value list, entries;
+        Scaleform::GFx::Value list, entries;
         if (!movie->GetVariable(&list, "root1.Menu_mc.MainPanel_mc.List_mc") || !list.IsObject() ||
             !list.GetMember("entryList", &entries) || !entries.IsArray()) return false;
-        RE::Scaleform::GFx::Value index;
+        Scaleform::GFx::Value index;
         bool found = false;
         for (std::uint32_t i = 0; i < entries.GetArraySize(); ++i) {
-            RE::Scaleform::GFx::Value item, text, marker, itemIndex;
+            Scaleform::GFx::Value item, text, marker, itemIndex;
             if (!entries.GetElement(i, &item) || !item.IsObject()) continue;
             if (item.GetMember("prismaPhotoMode", &marker) && marker.IsBoolean() && marker.GetBoolean()) {
                 if (!item.SetMember("disabled", ui->GetMenuOpen<RE::PipboyMenu>())) return false;
@@ -243,7 +243,7 @@ namespace
             }
         }
         if (!found) return false;
-        RE::Scaleform::GFx::Value entry;
+        Scaleform::GFx::Value entry;
         movie->CreateObject(&entry);
         if (!entry.IsObject() || !entry.SetMember("text", "PHOTO MODE") ||
             !entry.SetMember("disabled", ui->GetMenuOpen<RE::PipboyMenu>()) ||
@@ -253,13 +253,13 @@ namespace
         return true;
     }
 
-    using PauseMenuCall = void (*)(RE::PauseMenu*, const RE::Scaleform::GFx::FunctionHandler::Params&);
+    using PauseMenuCall = void (*)(RE::PauseMenu*, const Scaleform::GFx::FunctionHandler::Params&);
     PauseMenuCall g_originalPauseMenuCall = nullptr;
 
-    void OnPauseMenuCall(RE::PauseMenu* a_menu, const RE::Scaleform::GFx::FunctionHandler::Params& a_params)
+    void OnPauseMenuCall(RE::PauseMenu* a_menu, const Scaleform::GFx::FunctionHandler::Params& a_params)
     {
         if (reinterpret_cast<std::uintptr_t>(a_params.userData) == 16 && a_menu && a_menu->uiMovie && ViewReady()) {
-            RE::Scaleform::GFx::Value entry, marker, disabled;
+            Scaleform::GFx::Value entry, marker, disabled;
             auto* queue = RE::UIMessageQueue::GetSingleton();
             if (queue && F4SE::GetTaskInterface() &&
                 a_menu->uiMovie->GetVariable(&entry, "root1.Menu_mc.MainPanel_mc.List_mc.selectedEntry") && entry.IsObject() &&
