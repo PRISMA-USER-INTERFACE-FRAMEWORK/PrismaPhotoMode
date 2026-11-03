@@ -247,7 +247,10 @@
     select.textContent = "";
     select.add(new Option("None", ""));
     const category = layer.items.find((entry) => entry.name === $(layer.category).value);
-    if (category) category.overlays.forEach((name) => select.add(new Option(name, name)));
+    if (category) category.overlays.forEach((name) => {
+      const label = name.replace(/\.png$/i, "").replace(/[_-]+/g, " ").replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
+      select.add(new Option(label, name));
+    });
     select.value = "";
     applyLayer(layer);
   }

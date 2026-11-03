@@ -103,6 +103,8 @@ body {
   object-fit: contain;
 }
 
+#fx-overlay { object-fit: fill; }
+
 #fx-grid .line {
   position: absolute;
   display: none;
