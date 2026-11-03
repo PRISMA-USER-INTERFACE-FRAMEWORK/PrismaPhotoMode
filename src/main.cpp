@@ -60,6 +60,8 @@ namespace
     constexpr float kMaxDofDistance = 5000.0F;
     constexpr float kMaxDofRange = 5000.0F;
     constexpr float kMaxLighting = 3.0F;
+    constexpr float kMaxRoll = 90.0F;
+    constexpr std::size_t kTrampolineSize = 64;
 
     struct Settings
     {
@@ -105,7 +107,7 @@ namespace
         const bool active = PPM::PhotoMode::Active();
         const bool focused = active && g_api->HasFocus(g_view);
         const auto json = std::format(
-            R"({{"active":{},"focused":{},"fov":{:.1f},"speed":{:.2f},"frozen":{},"timeMult":{:.2f},"hour":{:.2f},"timescale":{:.1f},"timeReady":{},"panelScale":{},"lightingReady":{},"brightness":{:.2f},"saturation":{:.2f},"contrast":{:.2f}}})",
+            R"({{"active":{},"focused":{},"fov":{:.1f},"speed":{:.2f},"frozen":{},"timeMult":{:.2f},"hour":{:.2f},"timescale":{:.1f},"timeReady":{},"panelScale":{},"lightingReady":{},"brightness":{:.2f},"saturation":{:.2f},"contrast":{:.2f},"roll":{:.1f},"rollReady":{}}})",
             active ? "true" : "false",
             focused ? "true" : "false",
             PPM::PhotoMode::CurrentFOV(),
@@ -119,7 +121,9 @@ namespace
             PPM::RuntimeSupport::LightingAvailable() ? "true" : "false",
             PPM::PhotoMode::Brightness(),
             PPM::PhotoMode::Saturation(),
-            PPM::PhotoMode::Contrast());
+            PPM::PhotoMode::Contrast(),
+            PPM::PhotoMode::ViewRoll(),
+            PPM::RuntimeSupport::ViewRollAvailable() ? "true" : "false");
         g_api->InteropCall(g_view, kStateCallback, json.c_str());
     }
 
@@ -220,6 +224,8 @@ namespace
             if (ParseFloat(value, number) && PPM::PhotoMode::Active()) PPM::PhotoMode::SetFOV(std::clamp(number, kMinFOV, kMaxFOV));
         } else if (name == "speed") {
             if (ParseFloat(value, number) && PPM::PhotoMode::Active()) PPM::PhotoMode::SetTranslateSpeed(std::clamp(number, kMinSpeed, kMaxSpeed));
+        } else if (name == "roll") {
+            if (ParseFloat(value, number)) PPM::PhotoMode::SetViewRoll(std::clamp(number, -kMaxRoll, kMaxRoll));
         } else if (name == "focus") {
             SetFocus(value == "1");
         } else if (name == "screenshot") {
@@ -279,6 +285,14 @@ namespace
             std::uint32_t id = 0;
             ParseUnsigned(value, id);
             PPM::PhotoMode::PlayIdleOnPlayer(id);
+        } else if (name == "expression") {
+            std::uint32_t id = 0;
+            ParseUnsigned(value, id);
+            PPM::PhotoMode::SetExpressionOnPick(id);
+        } else if (name == "playerexpression") {
+            std::uint32_t id = 0;
+            ParseUnsigned(value, id);
+            PPM::PhotoMode::SetExpressionOnPlayer(id);
         } else if (name == "art") {
             std::uint32_t id = 0;
             ParseUnsigned(value, id);
@@ -386,6 +400,9 @@ namespace
             PPM::RuntimeSupport::ValidateDepthOfFieldMappings(g_runtimeFamily);
             PPM::RuntimeSupport::ValidateFilterMappings(g_runtimeFamily);
             PPM::RuntimeSupport::ValidateLightingMappings(g_runtimeFamily);
+            PPM::RuntimeSupport::ValidateViewRollMappings(g_runtimeFamily);
+            PPM::PhotoMode::InstallViewRoll();
+            PPM::RuntimeSupport::ValidateExpressionMappings(g_runtimeFamily);
             PPM::RuntimeSupport::ValidateCharacterMappings(g_runtimeFamily);
             g_api = PRISMA_UI_API::RequestPluginAPI<PRISMA_UI_API::IVPrismaUI10>();
             if (!g_api) {
@@ -460,7 +477,7 @@ extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Query(const F4SE::QueryInterface* f
 extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Load(const F4SE::LoadInterface* f4se)
 {
     if (g_runtimeFamily == PPM::RuntimeSupport::Family::Unsupported) return false;
-    F4SE::Init(f4se, F4SE::InitInfo{ .log = false });
+    F4SE::Init(f4se, F4SE::InitInfo{ .log = false, .trampoline = true, .trampolineSize = kTrampolineSize });
     auto* messaging = F4SE::GetMessagingInterface();
     if (!messaging) return false;
     messaging->RegisterListener(HandleMessage);

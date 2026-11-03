@@ -227,6 +227,8 @@
     if (typeof data.brightness === "number") syncSlider("brightness", "brightness-out", data.brightness, 2);
     if (typeof data.saturation === "number") syncSlider("saturation", "saturation-out", data.saturation, 2);
     if (typeof data.contrast === "number") syncSlider("contrast", "contrast-out", data.contrast, 2);
+    if (typeof data.roll === "number") syncSlider("roll", "roll-out", data.roll, 0);
+    $("roll").disabled = !data.rollReady;
     if (typeof data.timeMult === "number") syncSlider("timemult", "timemult-out", data.timeMult, 2);
     if (typeof data.timescale === "number") syncSlider("timescale", "timescale-out", data.timescale, 0);
     if (typeof data.hour === "number") {
@@ -342,6 +344,7 @@
     }
     state.idles = Array.isArray(data.idles) ? data.idles : [];
     fillIdleCategories();
+    fillSelect($("expression-select"), Array.isArray(data.expressions) ? data.expressions : []);
     fillSelect($("art-select"), Array.isArray(data.arts) ? data.arts : []);
     fillSelect($("shader-select"), Array.isArray(data.shaders) ? data.shaders : []);
   };
@@ -364,6 +367,10 @@
   $("speed").addEventListener("input", (event) => {
     $("speed-out").textContent = Number(event.target.value).toFixed(2);
     command(`speed|${event.target.value}`);
+  });
+  $("roll").addEventListener("input", (event) => {
+    $("roll-out").textContent = event.target.value;
+    command(`roll|${event.target.value}`);
   });
 
   [
@@ -426,6 +433,10 @@
   $("idle-btn").addEventListener("click", () => {
     const verb = $("idle-target").value === "player" ? "playeridle" : "idle";
     command(`${verb}|${$("idle-select").value || 0}`);
+  });
+  $("expression-btn").addEventListener("click", () => {
+    const verb = $("expression-target").value === "player" ? "playerexpression" : "expression";
+    command(`${verb}|${$("expression-select").value || 0}`);
   });
   $("art-btn").addEventListener("click", () => command(`art|${$("art-select").value || 0}`));
   $("shader-btn").addEventListener("click", () => command(`shader|${$("shader-select").value || 0}`));

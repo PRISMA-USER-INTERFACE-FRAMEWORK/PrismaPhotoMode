@@ -1,6 +1,8 @@
 #include "PhotoModeLists.h"
+#include "RuntimeSupport.h"
 
 #include <RE/B/BGSArtObject.h>
+#include <RE/B/BGSKeyword.h>
 #include <RE/T/TESDataHandler.h>
 #include <RE/T/TESEffectShader.h>
 #include <RE/T/TESIdleForm.h>
@@ -42,23 +44,16 @@ namespace PPM::PhotoModeLists
             return extension == ".png";
         }
 
-        template <class T>
-        std::string FormArray()
+        using Entries = std::vector<std::pair<std::string, std::uint32_t>>;
+
+        std::string EntriesJson(Entries a_entries)
         {
-            std::vector<std::pair<std::string, std::uint32_t>> entries;
-            if (auto* handler = RE::TESDataHandler::GetSingleton()) {
-                for (auto* form : handler->GetFormArray<T>()) {
-                    if (!form) continue;
-                    const char* editorId = form->GetFormEditorID();
-                    entries.emplace_back(editorId && *editorId ? std::string{ editorId } : std::format("{:08X}", form->GetFormID()), form->GetFormID());
-                }
-            }
-            std::ranges::sort(entries);
-            if (entries.size() > kMaxFormEntries) entries.resize(kMaxFormEntries);
+            std::ranges::sort(a_entries);
+            if (a_entries.size() > kMaxFormEntries) a_entries.resize(kMaxFormEntries);
 
             std::string json{ "[" };
             bool first = true;
-            for (const auto& [name, id] : entries) {
+            for (const auto& [name, id] : a_entries) {
                 if (!first) json += ',';
                 first = false;
                 json += std::format(R"({{"id":{},"name":")", id);
@@ -67,6 +62,38 @@ namespace PPM::PhotoModeLists
             }
             json += ']';
             return json;
+        }
+
+        template <class T>
+        std::string FormArray()
+        {
+            Entries entries;
+            if (auto* handler = RE::TESDataHandler::GetSingleton()) {
+                for (auto* form : handler->GetFormArray<T>()) {
+                    if (!form) continue;
+                    const char* editorId = form->GetFormEditorID();
+                    entries.emplace_back(editorId && *editorId ? std::string{ editorId } : std::format("{:08X}", form->GetFormID()), form->GetFormID());
+                }
+            }
+            return EntriesJson(std::move(entries));
+        }
+
+        std::string ExpressionArray()
+        {
+            constexpr std::string_view kPrefix{ "AnimFaceArchetype" };
+            Entries entries;
+            if (RuntimeSupport::ExpressionsAvailable()) {
+                if (const auto keywords = RE::BGSKeyword::GetTypedKeywords()) {
+                    for (auto* keyword : (*keywords)[std::to_underlying(RE::KeywordType::kAnimFaceArchetype)]) {
+                        if (!keyword) continue;
+                        const char* editorId = keyword->GetFormEditorID();
+                        std::string name = editorId && *editorId ? std::string{ editorId } : std::format("{:08X}", keyword->GetFormID());
+                        if (name.starts_with(kPrefix) && name.size() > kPrefix.size()) name.erase(0, kPrefix.size());
+                        entries.emplace_back(std::move(name), keyword->GetFormID());
+                    }
+                }
+            }
+            return EntriesJson(std::move(entries));
         }
 
         std::string OverlayCategories(const std::filesystem::path& a_root)
@@ -118,7 +145,7 @@ namespace PPM::PhotoModeLists
 
     std::string BuildCharacterForms()
     {
-        return std::string{ R"({"idles":)" } + FormArray<RE::TESIdleForm>() + R"(,"arts":)" + FormArray<RE::BGSArtObject>() + R"(,"shaders":)" + FormArray<RE::TESEffectShader>() + "}";
+        return std::string{ R"({"idles":)" } + FormArray<RE::TESIdleForm>() + R"(,"arts":)" + FormArray<RE::BGSArtObject>() + R"(,"shaders":)" + FormArray<RE::TESEffectShader>() + R"(,"expressions":)" + ExpressionArray() + "}";
     }
 
     std::string BuildPick(const char* a_name)

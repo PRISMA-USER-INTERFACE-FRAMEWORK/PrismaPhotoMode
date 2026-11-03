@@ -5,6 +5,12 @@
 
 #include <cstdint>
 
+namespace RE
+{
+    class Actor;
+    class BGSKeyword;
+}
+
 namespace PPM::RuntimeSupport
 {
     enum class Family : std::uint8_t
@@ -28,4 +34,10 @@ namespace PPM::RuntimeSupport
     [[nodiscard]] bool CharactersAvailable() noexcept;
     void ValidateLightingMappings(Family family);
     [[nodiscard]] bool LightingAvailable() noexcept;
+    void ValidateViewRollMappings(Family family);
+    [[nodiscard]] bool ViewRollAvailable() noexcept;
+    [[nodiscard]] std::uintptr_t ViewRollCallSite() noexcept;
+    void ValidateExpressionMappings(Family family);
+    [[nodiscard]] bool ExpressionsAvailable() noexcept;
+    void ChangeAnimFaceArchetype(RE::Actor* a_actor, RE::BGSKeyword* a_keyword);
 }

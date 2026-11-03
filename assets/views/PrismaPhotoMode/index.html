@@ -47,6 +47,9 @@
         <label>Field of view <output id="fov-out">75</output>
           <input id="fov" type="range" min="5" max="150" step="1" value="75">
         </label>
+        <label>View roll <output id="roll-out">0</output>&deg;
+          <input id="roll" type="range" min="-90" max="90" step="1" value="0">
+        </label>
         <label>Camera speed <output id="speed-out">1.00</output>
           <input id="speed" type="range" min="0.1" max="50" step="0.1" value="1">
         </label>
@@ -211,6 +214,13 @@
           <select id="idle-select"><option value="">None</option></select>
         </label>
         <button id="idle-btn" type="button">Play idle</button>
+        <label>Expression target
+          <select id="expression-target"><option value="picked">Picked (player if none)</option><option value="player">Player</option></select>
+        </label>
+        <label>Expression
+          <select id="expression-select"><option value="">None</option></select>
+        </label>
+        <button id="expression-btn" type="button">Apply expression</button>
         <label>Art object
           <select id="art-select"><option value="">None</option></select>
         </label>

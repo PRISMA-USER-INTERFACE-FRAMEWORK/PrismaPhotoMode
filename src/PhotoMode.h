@@ -49,5 +49,11 @@ namespace PPM::PhotoMode
     void PlayIdleOnPlayer(std::uint32_t a_formID);
     void ApplyArtToPick(std::uint32_t a_formID);
     void ApplyShaderToPick(std::uint32_t a_formID);
+    void SetExpressionOnPick(std::uint32_t a_formID);
+    void SetExpressionOnPlayer(std::uint32_t a_formID);
     [[nodiscard]] const char* PickedName();
+
+    void InstallViewRoll();
+    void SetViewRoll(float a_degrees);
+    [[nodiscard]] float ViewRoll() noexcept;
 }

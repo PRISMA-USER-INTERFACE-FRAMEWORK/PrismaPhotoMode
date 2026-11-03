@@ -19,10 +19,10 @@ REQUIRED_IDS = (
     "fx-dof-toggle", "dof-distance", "dof-distance-out", "dof-strength", "dof-strength-out", "dof-range", "dof-range-out", "dof-auto",
     "filter-select", "filter-strength", "filter-strength-out",
     "brightness", "brightness-out", "saturation", "saturation-out", "contrast", "contrast-out", "lighting-reset-btn",
-    "show-player",
-    "pick-name", "freeze-btn", "release-btn", "face-btn", "idle-target", "idle-category", "idle-select", "idle-btn", "art-select", "art-btn", "shader-select", "shader-btn",
+    "show-player", "roll", "roll-out",
+    "pick-name", "freeze-btn", "release-btn", "face-btn", "idle-target", "idle-category", "idle-select", "idle-btn", "expression-target", "expression-select", "expression-btn", "art-select", "art-btn", "shader-select", "shader-btn",
 )
-NATIVE_COMMANDS = ("fov", "speed", "focus", "screenshot", "reset", "exit", "freeze", "timemult", "hour", "timescale", "weather", "lists", "dof", "dofdist", "dofstrength", "dofrange", "autofocus", "brightness", "saturation", "contrast", "lightreset", "showplayer", "filter", "filterstrength", "pick", "pickfreeze", "face", "idle", "playeridle", "art", "shader")
+NATIVE_COMMANDS = ("fov", "speed", "roll", "focus", "screenshot", "reset", "exit", "freeze", "timemult", "hour", "timescale", "weather", "lists", "dof", "dofdist", "dofstrength", "dofrange", "autofocus", "brightness", "saturation", "contrast", "lightreset", "showplayer", "filter", "filterstrength", "pick", "pickfreeze", "face", "idle", "playeridle", "expression", "playerexpression", "art", "shader")
 KEPT_OVERLAYS = ("#fx-vignette", "#fx-tint", "#fx-grain", "#fx-frame", "#fx-letterbox")
 
 

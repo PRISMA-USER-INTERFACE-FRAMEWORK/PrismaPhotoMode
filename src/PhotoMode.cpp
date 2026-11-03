@@ -4,6 +4,7 @@
 #include <RE/A/Actor.h>
 #include <RE/A/AIProcess.h>
 #include <RE/B/BGSArtObject.h>
+#include <RE/B/BGSKeyword.h>
 #include <RE/B/BGSSaveLoadManager.h>
 #include <RE/B/BSPointerHandle.h>
 #include <RE/B/BSTimer.h>
@@ -18,6 +19,7 @@
 #include <RE/M/Main.h>
 #include <RE/M/MenuControls.h>
 #include <RE/N/NiAVObject.h>
+#include <RE/N/NiMatrix3.h>
 #include <RE/P/PlayerCamera.h>
 #include <RE/P/PlayerCharacter.h>
 #include <RE/S/SendHUDMessage.h>
@@ -29,13 +31,16 @@
 #include <RE/T/TESImageSpaceModifier.h>
 #include <RE/T/TESWeather.h>
 #include <RE/U/UserEvents.h>
+#include <REL/Trampoline.h>
 
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <numbers>
 #include <optional>
+#include <utility>
 
 namespace PPM::PhotoMode
 {
@@ -149,6 +154,7 @@ namespace PPM::PhotoMode
         RE::ObjectRefHandle g_faced{};
         float g_facedHeading{ 0.0F };
         RE::ObjectRefHandle g_idled{};
+        RE::ObjectRefHandle g_expressed{};
         bool g_playerHidden{ false };
 
         void ReleaseFrozen()
@@ -186,11 +192,44 @@ namespace PPM::PhotoMode
             g_idled = a_actor->GetHandle();
         }
 
+        RE::BGSKeyword* FindExpression(std::uint32_t a_formID)
+        {
+            if (!a_formID) return nullptr;
+            const auto keywords = RE::BGSKeyword::GetTypedKeywords();
+            if (!keywords) return nullptr;
+            for (auto* keyword : (*keywords)[std::to_underlying(RE::KeywordType::kAnimFaceArchetype)]) {
+                if (keyword && keyword->GetFormID() == a_formID) return keyword;
+            }
+            return nullptr;
+        }
+
+        void ClearExpressed()
+        {
+            const auto ref = g_expressed.get();
+            auto* actor = ref ? ref->As<RE::Actor>() : nullptr;
+            g_expressed = RE::ObjectRefHandle{};
+            if (actor) RuntimeSupport::ChangeAnimFaceArchetype(actor, nullptr);
+        }
+
+        void ApplyExpressionOn(RE::Actor* a_actor, std::uint32_t a_formID)
+        {
+            if (!a_actor) return;
+            auto* keyword = FindExpression(a_formID);
+            if (a_formID && !keyword) {
+                spdlog::warn("PrismaPhotoMode: expression {:X} is not a known AnimFaceArchetype keyword", a_formID);
+                return;
+            }
+            ClearExpressed();
+            RuntimeSupport::ChangeAnimFaceArchetype(a_actor, keyword);
+            g_expressed = a_actor->GetHandle();
+        }
+
         void ResetPicked()
         {
             ReleaseFrozen();
             RestoreFaced();
             StopIdled();
+            ClearExpressed();
         }
 
         void ShowPlayer()
@@ -220,6 +259,16 @@ namespace PPM::PhotoMode
         {
             if (!RuntimeSupport::LightingAvailable()) return;
             if (auto* imgs = RE::ImageSpaceManager::GetSingleton()) imgs->overRideBaseData = nullptr;
+        }
+
+        constexpr float kDegToRad = std::numbers::pi_v<float> / 180.0F;
+        float g_viewRoll{ 0.0F };
+        using FromEulerAnglesZXYFn = void (*)(RE::NiMatrix3*, float, float, float);
+        FromEulerAnglesZXYFn g_fromEulerAnglesZXY{ nullptr };
+
+        void ViewRollThunk(RE::NiMatrix3* a_matrix, float a_z, float a_x, float a_y)
+        {
+            g_fromEulerAnglesZXY(a_matrix, a_z, a_x, g_active ? g_viewRoll * kDegToRad : a_y);
         }
 
         bool IsFreeCamera(RE::PlayerCamera* a_camera)
@@ -342,6 +391,7 @@ namespace PPM::PhotoMode
         ShowPlayer();
         SetFOV(g_snapshot.fov);
         SetTranslateSpeed(g_snapshot.translateSpeed);
+        g_viewRoll = 0.0F;
         RE::SendHUDMessage::PopHUDMode(RE::HUDModeType(kHudMode));
         g_active = false;
         spdlog::info("PrismaPhotoMode: exited");
@@ -363,6 +413,26 @@ namespace PPM::PhotoMode
         if (!g_active) return;
         SetFOV(g_snapshot.fov);
         SetTranslateSpeed(g_snapshot.translateSpeed);
+        g_viewRoll = 0.0F;
+    }
+
+    void InstallViewRoll()
+    {
+        const auto site = RuntimeSupport::ViewRollCallSite();
+        if (!site || g_fromEulerAnglesZXY) return;
+        g_fromEulerAnglesZXY = reinterpret_cast<FromEulerAnglesZXYFn>(REL::GetTrampoline().write_call<5>(site, &ViewRollThunk));
+        spdlog::info("PrismaPhotoMode: view roll hook installed at 0x{:X}", site);
+    }
+
+    void SetViewRoll(float a_degrees)
+    {
+        if (!g_active || !RuntimeSupport::ViewRollAvailable()) return;
+        g_viewRoll = a_degrees;
+    }
+
+    float ViewRoll() noexcept
+    {
+        return g_viewRoll;
     }
 
     float CurrentFOV() noexcept
@@ -598,6 +668,20 @@ namespace PPM::PhotoMode
         const auto ref = PickedRef();
         auto* shader = FindForm<RE::TESEffectShader>(a_formID);
         if (ref && shader) ref->ApplyEffectShader(shader);
+    }
+
+    void SetExpressionOnPick(std::uint32_t a_formID)
+    {
+        if (!RuntimeSupport::CharactersAvailable() || !RuntimeSupport::ExpressionsAvailable()) return;
+        const auto ref = PickedRef();
+        auto* actor = ref ? ref->As<RE::Actor>() : nullptr;
+        ApplyExpressionOn(ref ? actor : RE::PlayerCharacter::GetSingleton(), a_formID);
+    }
+
+    void SetExpressionOnPlayer(std::uint32_t a_formID)
+    {
+        if (!RuntimeSupport::CharactersAvailable() || !RuntimeSupport::ExpressionsAvailable()) return;
+        ApplyExpressionOn(RE::PlayerCharacter::GetSingleton(), a_formID);
     }
 
     const char* PickedName()

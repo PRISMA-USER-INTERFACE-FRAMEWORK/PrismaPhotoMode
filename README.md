@@ -10,10 +10,11 @@ Based on PhotoModeF4 by powerof3 (MIT). See `THIRD_PARTY_NOTICES`.
 - On entry the free camera turns on, game time freezes, the HUD hides, and the photo panel shows.
 - On exit the camera, time, HUD and field of view are restored to their values from before entry.
 - The panel has a field-of-view slider, a camera speed slider, and buttons for focus, screenshot, reset and exit.
+- The Camera tab has a View roll slider under field of view (-90 to 90 degrees, default 0). It tilts the view while photo mode is open. Reset camera and exit set it back to 0. Not verified in game.
 - Depth of field has focus distance, strength and range sliders. Auto focus follows the picked reference (the console pick) and uses the manual distance when nothing is picked.
 - The Filters tab applies a game image space modifier (chosen from a list) with a strength slider. Not verified in game.
 - The Filters tab also has Lighting sliders (brightness, saturation, contrast, 0 to 3). They override the game's image space base data until photo mode closes. Not verified in game.
-- The Characters tab acts on the console-picked reference: freeze and release, face the camera, play an idle, and apply an art object or effect shader. Idle target is Picked (the player when nothing is picked) or Player, and the idle list can be filtered by category (the editor ID prefix before the first underscore, or Other). Not verified in game.
+- The Characters tab acts on the console-picked reference: freeze and release, face the camera, play an idle, and apply an art object or effect shader. Idle target is Picked (the player when nothing is picked) or Player, and the idle list can be filtered by category (the editor ID prefix before the first underscore, or Other). The Expression list applies an AnimFaceArchetype keyword to the same target. Only one actor keeps an expression at a time; choosing None, choosing another actor, or exiting photo mode clears it. Not verified in game.
 - Show player hides the player model while photo mode is open. It is shown again when photo mode closes. Not verified in game.
 - Visual effects are CSS overlays in the panel view: vignette, letterbox with an aspect picker, colour tint, film grain, frame, and a rule-of-thirds grid.
 - The screenshot action hides the panel and grid and keeps the overlays. Whether the engine screenshot captures the web overlays is not verified in game.
