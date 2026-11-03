@@ -42,6 +42,7 @@ namespace PPM::PhotoMode
     [[nodiscard]] float Saturation() noexcept;
     [[nodiscard]] float Contrast() noexcept;
 
+    void SetPlayerVisible(bool a_visible);
     void SetPickedFrozen(bool a_on);
     void FacePicked();
     void PlayIdleOnPick(std::uint32_t a_formID);

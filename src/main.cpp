@@ -283,6 +283,8 @@ namespace
             std::uint32_t id = 0;
             ParseUnsigned(value, id);
             PPM::PhotoMode::ApplyShaderToPick(id);
+        } else if (name == "showplayer") {
+            PPM::PhotoMode::SetPlayerVisible(value == "1");
         } else if (name == "lists") {
             PushLists();
         } else if (name == "exit") {

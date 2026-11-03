@@ -17,7 +17,9 @@
 #include <RE/I/ImageSpaceModifierInstanceForm.h>
 #include <RE/M/Main.h>
 #include <RE/M/MenuControls.h>
+#include <RE/N/NiAVObject.h>
 #include <RE/P/PlayerCamera.h>
+#include <RE/P/PlayerCharacter.h>
 #include <RE/S/SendHUDMessage.h>
 #include <RE/S/Setting.h>
 #include <RE/S/Sky.h>
@@ -147,6 +149,7 @@ namespace PPM::PhotoMode
         RE::ObjectRefHandle g_faced{};
         float g_facedHeading{ 0.0F };
         RE::ObjectRefHandle g_idled{};
+        bool g_playerHidden{ false };
 
         void ReleaseFrozen()
         {
@@ -179,6 +182,14 @@ namespace PPM::PhotoMode
             ReleaseFrozen();
             RestoreFaced();
             StopIdled();
+        }
+
+        void ShowPlayer()
+        {
+            if (!g_playerHidden) return;
+            g_playerHidden = false;
+            auto* player = RE::PlayerCharacter::GetSingleton();
+            if (auto* root = player ? player->Get3D() : nullptr) root->CullGeometry(false);
         }
 
         void StopFilter()
@@ -319,6 +330,7 @@ namespace PPM::PhotoMode
         ResetFilter();
         ReleaseLighting();
         ResetPicked();
+        ShowPlayer();
         SetFOV(g_snapshot.fov);
         SetTranslateSpeed(g_snapshot.translateSpeed);
         RE::SendHUDMessage::PopHUDMode(RE::HUDModeType(kHudMode));
@@ -581,5 +593,19 @@ namespace PPM::PhotoMode
         if (!RuntimeSupport::CharactersAvailable()) return nullptr;
         const auto ref = PickedRef();
         return ref ? ref->GetDisplayFullName() : nullptr;
+    }
+
+    void SetPlayerVisible(bool a_visible)
+    {
+        if (!g_active) return;
+        if (a_visible) {
+            ShowPlayer();
+            return;
+        }
+        auto* player = RE::PlayerCharacter::GetSingleton();
+        auto* root = player ? player->Get3D() : nullptr;
+        if (!root) return;
+        root->CullGeometry(true);
+        g_playerHidden = true;
     }
 }

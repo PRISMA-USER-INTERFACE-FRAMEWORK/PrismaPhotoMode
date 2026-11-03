@@ -14,6 +14,7 @@ Based on PhotoModeF4 by powerof3 (MIT). See `THIRD_PARTY_NOTICES`.
 - The Filters tab applies a game image space modifier (chosen from a list) with a strength slider. Not verified in game.
 - The Filters tab also has Lighting sliders (brightness, saturation, contrast, 0 to 3). They override the game's image space base data until photo mode closes. Not verified in game.
 - The Characters tab acts on the console-picked reference: freeze and release, face the camera, play an idle, and apply an art object or effect shader. Not verified in game.
+- Show player hides the player model while photo mode is open. It is shown again when photo mode closes. Not verified in game.
 - Visual effects are CSS overlays in the panel view: vignette, letterbox with an aspect picker, colour tint, film grain, frame, and a rule-of-thirds grid.
 - The screenshot action hides the panel and grid and keeps the overlays. Whether the engine screenshot captures the web overlays is not verified in game.
 

@@ -123,6 +123,8 @@
     $("dof-range").value = DEFAULTS.dof.range;
     $("dof-range-out").textContent = DEFAULTS.dof.range;
     $("dof-auto").checked = DEFAULTS.dof.auto;
+    $("show-player").checked = true;
+    command("showplayer|1");
     command("dof|0");
     command(`dofdist|${DEFAULTS.dof.distance}`);
     command(`dofstrength|${DEFAULTS.dof.strength}`);
@@ -394,6 +396,7 @@
   $("lighting-reset-btn").addEventListener("click", () => command("lightreset|"));
   $("freeze-btn").addEventListener("click", () => command("pickfreeze|1"));
   $("release-btn").addEventListener("click", () => command("pickfreeze|0"));
+  $("show-player").addEventListener("change", (event) => command(`showplayer|${event.target.checked ? 1 : 0}`));
   $("face-btn").addEventListener("click", () => command("face|1"));
   $("idle-btn").addEventListener("click", () => command(`idle|${$("idle-select").value || 0}`));
   $("art-btn").addEventListener("click", () => command(`art|${$("art-select").value || 0}`));
