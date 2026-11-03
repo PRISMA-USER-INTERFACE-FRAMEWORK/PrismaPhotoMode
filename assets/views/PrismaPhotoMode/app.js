@@ -21,6 +21,8 @@
 
   const $ = (id) => document.getElementById(id);
   const state = { focused: false, shooting: false, active: false, panelScaleDefault: 100, idles: [] };
+  let gamepadFrame = null;
+  let statusTimer = null;
 
   function nativeCall(name, arg = "") {
     const fn = window[name];
@@ -140,6 +142,7 @@
     state.focused = focused;
     $("focus-state").textContent = focused ? "Panel has mouse" : "Camera has input";
     $("focus-btn").textContent = focused ? "Release to camera" : "Take mouse";
+    syncGamepadPolling();
   }
 
   function applyPanelScale(percent) {
@@ -216,6 +219,7 @@
     }
     const leaving = state.active && !data.active;
     state.active = Boolean(data.active);
+    syncStatusTimer();
     if (typeof data.panelScale === "number") state.panelScaleDefault = data.panelScale;
     if (leaving) resetEffects();
     if (!state.active) applyPanelScale(state.panelScaleDefault);
@@ -532,6 +536,19 @@
   const PAD = { a: 0, b: 1, lb: 4, rb: 5, up: 12, down: 13, left: 14, right: 15 };
   const padHeld = [];
 
+  function syncGamepadPolling() {
+    if (state.active && state.focused) {
+      if (gamepadFrame !== null) return;
+      const pad = Array.from(navigator.getGamepads?.() ?? []).find(Boolean);
+      Object.values(PAD).forEach((index) => { padHeld[index] = Boolean(pad?.buttons?.[index]?.pressed); });
+      gamepadFrame = window.requestAnimationFrame(pollGamepad);
+    } else if (gamepadFrame !== null) {
+      window.cancelAnimationFrame(gamepadFrame);
+      gamepadFrame = null;
+      padHeld.length = 0;
+    }
+  }
+
   function padEdge(pad, index) {
     const now = Boolean(pad?.buttons?.[index]?.pressed);
     const was = padHeld[index];
@@ -540,6 +557,8 @@
   }
 
   function pollGamepad() {
+    gamepadFrame = null;
+    if (!state.active || !state.focused) return;
     const pad = Array.from(navigator.getGamepads?.() ?? []).find(Boolean);
     const up = padEdge(pad, PAD.up);
     const down = padEdge(pad, PAD.down);
@@ -559,7 +578,7 @@
       if (lb) switchTab(-1);
       if (rb) switchTab(1);
     }
-    window.requestAnimationFrame(pollGamepad);
+    if (state.active && state.focused && gamepadFrame === null) gamepadFrame = window.requestAnimationFrame(pollGamepad);
   }
 
   $("fx-dof-toggle").addEventListener("change", (event) => command(`dof|${event.target.checked ? 1 : 0}`));
@@ -576,10 +595,17 @@
     command(`dofrange|${event.target.value}`);
   });
   $("dof-auto").addEventListener("change", (event) => command(`autofocus|${event.target.checked ? 1 : 0}`));
-  setInterval(() => {
-    if (state.active && $("dof-auto").checked) command("autofocus|1");
-    if (state.active && !document.querySelector('[data-tab-panel="characters"]').hidden) command("pick|1");
-  }, 250);
+  function syncStatusTimer() {
+    if (state.active && statusTimer === null) {
+      statusTimer = setInterval(() => {
+        if ($("fx-dof-toggle").checked && $("dof-auto").checked) command("autofocus|1");
+        if (!document.querySelector('[data-tab-panel="characters"]').hidden) command("pick|1");
+      }, 250);
+    } else if (!state.active && statusTimer !== null) {
+      clearInterval(statusTimer);
+      statusTimer = null;
+    }
+  }
 
   $("panel-scale").addEventListener("input", (event) => applyPanelScale(Number(event.target.value)));
 
@@ -589,5 +615,4 @@
   });
   resetEffects();
   applyPanelScale(state.panelScaleDefault);
-  pollGamepad();
 })();

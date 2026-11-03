@@ -291,10 +291,20 @@ body {
 }
 
 #panel button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 36px;
   cursor: pointer;
   border: 1px solid rgba(157, 224, 144, 0.35);
   background: rgba(142, 225, 128, 0.06);
   padding: 9px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 #panel button:hover, #panel button:focus-visible, #panel select:focus-visible, #panel input:focus-visible {
@@ -329,16 +339,19 @@ body {
 #panel input[type="color"] { width: 31px; height: 22px; padding: 1px; border: 1px solid #75a773; background: transparent; vertical-align: middle; }
 
 .effects-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.effects-grid h2, .effects-grid > button { grid-column: 1 / -1; }
+.effects-grid h2 { grid-column: 1 / -1; }
 .effects-grid h2 { margin-bottom: 3px; }
 .effects-grid > button { margin-top: 2px; }
 
 [data-tab-panel="characters"] section { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 10px; }
 [data-tab-panel="characters"] h2, [data-tab-panel="characters"] p, [data-tab-panel="characters"] fieldset { grid-column: 1 / -1; }
 [data-tab-panel="characters"] p { margin: 4px 0; color: #9dc994; }
-[data-tab-panel="characters"] fieldset { display: flex; flex-wrap: wrap; gap: 5px; }
+[data-tab-panel="characters"] fieldset { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
 [data-tab-panel="characters"] label { margin: 4px 0; }
 [data-tab-panel="characters"] button { align-self: end; }
+[data-tab-panel="camera"] #focus-btn,
+[data-tab-panel="time"] #weather-clear-btn,
+[data-tab-panel="filters"] #lighting-reset-btn { width: calc(50% - 3.5px); }
 [data-tab-panel="access"] p { color: #a7cda0; font-size: 12px; line-height: 1.55; }
 
 .capture-actions {
@@ -350,7 +363,6 @@ body {
 }
 
 .capture-actions #screenshot-btn { background: #b2eda2; color: #102017; border-color: #b2eda2; font-weight: 700; }
-.capture-actions button { font-size: 11px !important; letter-spacing: 0.05em; text-transform: uppercase; }
 .control-hint { display: flex; justify-content: space-between; gap: 5px; padding: 0 24px 15px; color: #86b680; font-size: 9px; font-weight: 700; letter-spacing: 0.05em; }
 @media (max-width: 600px) {
   #panel .tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
