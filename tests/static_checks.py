@@ -14,7 +14,7 @@ REQUIRED_IDS = (
     "fx-grain-toggle", "grain-amount", "fx-frame-toggle", "frame-width",
     "fx-grid", "fx-vignette", "fx-tint", "fx-grain", "fx-frame",
     "fx-letterbox-top", "fx-letterbox-bottom", "fx-letterbox-left", "fx-letterbox-right",
-    "time-freeze", "timemult", "timemult-out", "hour", "hour-out", "timescale", "timescale-out",
+    "grid-kind", "time-freeze", "timemult", "timemult-out", "hour", "hour-out", "timescale", "timescale-out",
     "weather-select", "weather-clear-btn",
 )
 NATIVE_COMMANDS = ("fov", "speed", "focus", "screenshot", "reset", "exit", "freeze", "timemult", "hour", "timescale", "weather", "lists")

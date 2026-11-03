@@ -15,8 +15,11 @@
   <div id="fx-letterbox-bottom" class="fx bar" hidden></div>
   <div id="fx-letterbox-left" class="fx bar" hidden></div>
   <div id="fx-letterbox-right" class="fx bar" hidden></div>
-  <div id="fx-grid" class="fx" hidden>
-    <span class="v v1"></span><span class="v v2"></span><span class="h h1"></span><span class="h h2"></span>
+  <div id="fx-grid" class="fx" hidden data-kind="thirds">
+    <span class="line t v v1"></span><span class="line t v v2"></span><span class="line t h h1"></span><span class="line t h h2"></span>
+    <span class="line g v v1"></span><span class="line g v v2"></span><span class="line g h h1"></span><span class="line g h h2"></span>
+    <span class="line c v v1"></span><span class="line c h h1"></span>
+    <svg class="d" viewBox="0 0 100 100" preserveAspectRatio="none"><line x1="0" y1="0" x2="100" y2="100"/><line x1="100" y1="0" x2="0" y2="100"/></svg>
   </div>
 
   <button id="show-panel" type="button" hidden>Show panel</button>
@@ -47,7 +50,15 @@
       <section>
         <h2>Effects</h2>
         <fieldset>
-          <label><input id="fx-grid-toggle" type="checkbox"> Rule-of-thirds grid</label>
+          <label><input id="fx-grid-toggle" type="checkbox"> Grid</label>
+          <label>Pattern
+            <select id="grid-kind">
+              <option value="thirds">Rule of thirds</option>
+              <option value="golden">Golden ratio</option>
+              <option value="center">Center cross</option>
+              <option value="diagonals">Diagonals</option>
+            </select>
+          </label>
         </fieldset>
         <fieldset>
           <label><input id="fx-vignette-toggle" type="checkbox"> Vignette</label>

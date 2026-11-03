@@ -5,6 +5,7 @@
   const SHOT_HOLD_MS = 700;
   const DEFAULTS = {
     grid: false,
+    gridKind: "thirds",
     vignette: { on: false, strength: 45 },
     letterbox: { on: false, aspect: "2.39" },
     tint: { on: false, color: "#c08040", opacity: 20 },
@@ -36,6 +37,7 @@
   }
 
   function applyEffects() {
+    $("fx-grid").dataset.kind = $("grid-kind").value;
     setHidden("fx-grid", !$("fx-grid-toggle").checked);
 
     const vignetteOn = $("fx-vignette-toggle").checked;
@@ -91,6 +93,7 @@
 
   function resetEffects() {
     $("fx-grid-toggle").checked = DEFAULTS.grid;
+    $("grid-kind").value = DEFAULTS.gridKind;
     $("fx-vignette-toggle").checked = DEFAULTS.vignette.on;
     $("vignette-strength").value = DEFAULTS.vignette.strength;
     $("fx-letterbox-toggle").checked = DEFAULTS.letterbox.on;
@@ -201,6 +204,7 @@
 
   [
     "fx-grid-toggle",
+    "grid-kind",
     "fx-vignette-toggle",
     "vignette-strength",
     "fx-letterbox-toggle",
