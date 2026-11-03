@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/photo-mode-fo76]
   pull_request:
-    branches: [main]
+    branches: [main, feat/photo-mode-parity]
 
 permissions:
   contents: read
