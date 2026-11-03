@@ -20,6 +20,7 @@
 #include <RE/M/MenuControls.h>
 #include <RE/N/NiAVObject.h>
 #include <RE/N/NiMatrix3.h>
+#include <RE/N/NiNode.h>
 #include <RE/P/PlayerCamera.h>
 #include <RE/P/PlayerCharacter.h>
 #include <RE/S/SendHUDMessage.h>
