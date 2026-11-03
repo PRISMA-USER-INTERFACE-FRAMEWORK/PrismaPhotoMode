@@ -18,4 +18,12 @@ namespace PPM::RuntimeSupport
     [[nodiscard]] Family Classify(const REL::Version& version) noexcept;
     [[nodiscard]] const char* Name(Family family) noexcept;
     [[nodiscard]] bool ValidateMappings(Family family);
+    void ValidateTimeMappings(Family family);
+    [[nodiscard]] bool TimeControlsAvailable() noexcept;
+    void ValidateDepthOfFieldMappings(Family family);
+    [[nodiscard]] bool DepthOfFieldAvailable() noexcept;
+    void ValidateFilterMappings(Family family);
+    [[nodiscard]] bool FiltersAvailable() noexcept;
+    void ValidateCharacterMappings(Family family);
+    [[nodiscard]] bool CharactersAvailable() noexcept;
 }

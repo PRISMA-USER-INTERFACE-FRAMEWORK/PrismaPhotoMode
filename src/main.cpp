@@ -13,6 +13,7 @@
 #include "PrismaUI_F4_API.h"
 
 #include "PhotoMode.h"
+#include "PhotoModeLists.h"
 #include "RuntimeSupport.h"
 
 #include <spdlog/sinks/basic_file_sink.h>
@@ -36,17 +37,34 @@ namespace
     constexpr char kIniPath[] = "Data\\F4SE\\Plugins\\PrismaPhotoMode.ini";
     constexpr char kCommandListener[] = "pm_command";
     constexpr char kStateCallback[] = "pmSetState";
+    constexpr char kListsCallback[] = "pmSetLists";
+    constexpr char kOverlaysCallback[] = "pmSetOverlays";
+    constexpr char kFiltersCallback[] = "pmSetFilters";
+    constexpr char kCharactersCallback[] = "pmSetCharacters";
+    constexpr char kPickCallback[] = "pmSetPick";
     constexpr float kMinFOV = 5.0F;
     constexpr float kMaxFOV = 150.0F;
     constexpr float kMinSpeed = 0.1F;
     constexpr float kMaxSpeed = 50.0F;
+    constexpr float kMinTimeMult = 0.01F;
+    constexpr float kMaxTimeMult = 2.0F;
+    constexpr float kMaxHour = 23.99F;
+    constexpr float kMaxTimescale = 1000.0F;
     constexpr std::uint32_t kDefaultToggleKey = 0x78;
     constexpr std::uint32_t kDefaultFocusKey = 0x09;
+    constexpr std::uint32_t kDefaultFocusPadButton = 0x10020;
+    constexpr int kDefaultPanelScale = 100;
+    constexpr int kMinPanelScale = 50;
+    constexpr int kMaxPanelScale = 200;
+    constexpr float kMinDofDistance = 50.0F;
+    constexpr float kMaxDofDistance = 5000.0F;
 
     struct Settings
     {
         std::uint32_t toggleKey{ kDefaultToggleKey };
         std::uint32_t focusKey{ kDefaultFocusKey };
+        std::uint32_t focusPadButton{ kDefaultFocusPadButton };
+        int panelScale{ kDefaultPanelScale };
     };
 
     Settings g_settings{};
@@ -67,6 +85,11 @@ namespace
     {
         g_settings.toggleKey = ReadKey("ToggleKey", kDefaultToggleKey);
         g_settings.focusKey = ReadKey("FocusKey", kDefaultFocusKey);
+        g_settings.focusPadButton = GetPrivateProfileIntA("General", "FocusPadButton", static_cast<int>(kDefaultFocusPadButton), kIniPath);
+        g_settings.panelScale = std::clamp(
+            static_cast<int>(GetPrivateProfileIntA("General", "PanelScale", kDefaultPanelScale, kIniPath)),
+            kMinPanelScale,
+            kMaxPanelScale);
     }
 
     bool ViewReady()
@@ -80,12 +103,53 @@ namespace
         const bool active = PPM::PhotoMode::Active();
         const bool focused = active && g_api->HasFocus(g_view);
         const auto json = std::format(
-            R"({{"active":{},"focused":{},"fov":{:.1f},"speed":{:.2f}}})",
+            R"({{"active":{},"focused":{},"fov":{:.1f},"speed":{:.2f},"frozen":{},"timeMult":{:.2f},"hour":{:.2f},"timescale":{:.1f},"timeReady":{},"panelScale":{}}})",
             active ? "true" : "false",
             focused ? "true" : "false",
             PPM::PhotoMode::CurrentFOV(),
-            PPM::PhotoMode::CurrentTranslateSpeed());
+            PPM::PhotoMode::CurrentTranslateSpeed(),
+            PPM::PhotoMode::Frozen() ? "true" : "false",
+            PPM::PhotoMode::TimeMultiplier(),
+            PPM::PhotoMode::GameHour(),
+            PPM::PhotoMode::TimescaleMultiplier(),
+            PPM::RuntimeSupport::TimeControlsAvailable() ? "true" : "false",
+            g_settings.panelScale);
         g_api->InteropCall(g_view, kStateCallback, json.c_str());
+    }
+
+    void PushLists()
+    {
+        if (!ViewReady() || !PPM::RuntimeSupport::TimeControlsAvailable()) return;
+        const auto json = PPM::PhotoModeLists::Build();
+        g_api->InteropCall(g_view, kListsCallback, json.c_str());
+    }
+
+    void PushOverlays()
+    {
+        if (!ViewReady()) return;
+        const auto json = PPM::PhotoModeLists::BuildOverlays();
+        g_api->InteropCall(g_view, kOverlaysCallback, json.c_str());
+    }
+
+    void PushFilters()
+    {
+        if (!ViewReady() || !PPM::RuntimeSupport::FiltersAvailable()) return;
+        const auto json = PPM::PhotoModeLists::BuildFilters();
+        g_api->InteropCall(g_view, kFiltersCallback, json.c_str());
+    }
+
+    void PushCharacters()
+    {
+        if (!ViewReady() || !PPM::RuntimeSupport::CharactersAvailable()) return;
+        const auto json = PPM::PhotoModeLists::BuildCharacterForms();
+        g_api->InteropCall(g_view, kCharactersCallback, json.c_str());
+    }
+
+    void PushPick()
+    {
+        if (!ViewReady() || !PPM::RuntimeSupport::CharactersAvailable()) return;
+        const auto json = PPM::PhotoModeLists::BuildPick(PPM::PhotoMode::PickedName());
+        g_api->InteropCall(g_view, kPickCallback, json.c_str());
     }
 
     void SetFocus(bool a_focus)
@@ -104,6 +168,10 @@ namespace
         if (!ViewReady() || !PPM::PhotoMode::Enter()) return;
         g_api->Show(g_view);
         PushState();
+        PushLists();
+        PushOverlays();
+        PushFilters();
+        PushCharacters();
     }
 
     void ExitMode()
@@ -114,9 +182,18 @@ namespace
             g_api->Hide(g_view);
         }
         PPM::PhotoMode::Exit();
+        PushState();
     }
 
     bool ParseFloat(std::string_view a_text, float& a_value)
+    {
+        const auto* first = a_text.data();
+        const auto* last = first + a_text.size();
+        const auto result = std::from_chars(first, last, a_value);
+        return result.ec == std::errc{} && result.ptr == last;
+    }
+
+    bool ParseUnsigned(std::string_view a_text, std::uint32_t& a_value)
     {
         const auto* first = a_text.data();
         const auto* last = first + a_text.size();
@@ -144,9 +221,53 @@ namespace
         } else if (name == "reset") {
             PPM::PhotoMode::ResetCamera();
             PushState();
+        } else if (name == "freeze") {
+            PPM::PhotoMode::SetFrozen(value == "1");
+            PushState();
+        } else if (name == "timemult") {
+            if (ParseFloat(value, number)) PPM::PhotoMode::SetTimeMultiplier(std::clamp(number, kMinTimeMult, kMaxTimeMult));
+        } else if (name == "hour") {
+            if (ParseFloat(value, number)) PPM::PhotoMode::SetGameHour(std::clamp(number, 0.0F, kMaxHour));
+        } else if (name == "timescale") {
+            if (ParseFloat(value, number)) PPM::PhotoMode::SetTimescaleMultiplier(std::clamp(number, 1.0F, kMaxTimescale));
+        } else if (name == "weather") {
+            std::uint32_t id = 0;
+            ParseUnsigned(value, id);
+            PPM::PhotoMode::SetWeather(id);
+        } else if (name == "dof") {
+            PPM::PhotoMode::SetDepthOfField(value == "1");
+        } else if (name == "dofdist") {
+            if (ParseFloat(value, number)) PPM::PhotoMode::SetDepthOfFieldDistance(std::clamp(number, kMinDofDistance, kMaxDofDistance));
+        } else if (name == "autofocus") {
+            PPM::PhotoMode::SetAutoFocus(value == "1");
+        } else if (name == "filter") {
+            std::uint32_t id = 0;
+            ParseUnsigned(value, id);
+            PPM::PhotoMode::SetFilter(id);
+        } else if (name == "filterstrength") {
+            if (ParseFloat(value, number)) PPM::PhotoMode::SetFilterStrength(std::clamp(number, 0.0F, 1.0F));
+        } else if (name == "pick") {
+            PushPick();
+        } else if (name == "pickfreeze") {
+            PPM::PhotoMode::SetPickedFrozen(value == "1");
+        } else if (name == "face") {
+            PPM::PhotoMode::FacePicked();
+        } else if (name == "idle") {
+            std::uint32_t id = 0;
+            ParseUnsigned(value, id);
+            PPM::PhotoMode::PlayIdleOnPick(id);
+        } else if (name == "art") {
+            std::uint32_t id = 0;
+            ParseUnsigned(value, id);
+            PPM::PhotoMode::ApplyArtToPick(id);
+        } else if (name == "shader") {
+            std::uint32_t id = 0;
+            ParseUnsigned(value, id);
+            PPM::PhotoMode::ApplyShaderToPick(id);
+        } else if (name == "lists") {
+            PushLists();
         } else if (name == "exit") {
             ExitMode();
-            PushState();
         } else {
             spdlog::warn("PrismaPhotoMode: unknown or malformed command '{}'", name);
         }
@@ -161,6 +282,10 @@ namespace
         if (!PPM::PhotoMode::Active()) g_api->Hide(a_view);
         g_domReady = true;
         PushState();
+        PushLists();
+        PushOverlays();
+        PushFilters();
+        PushCharacters();
     }
 
     class PhotoModeInput final : public RE::BSInputEventUser
@@ -173,7 +298,15 @@ namespace
 
         void OnButtonEvent(const RE::ButtonEvent* a_event) override
         {
-            if (!a_event || !a_event->QJustPressed() || a_event->device.get() != RE::INPUT_DEVICE::kKeyboard) return;
+            if (!a_event || !a_event->QJustPressed()) return;
+
+            if (a_event->device.get() == RE::INPUT_DEVICE::kGamepad) {
+                if (g_settings.focusPadButton != 0 && a_event->idCode == g_settings.focusPadButton && PPM::PhotoMode::Active()) {
+                    SetFocus(!(ViewReady() && g_api->HasFocus(g_view)));
+                }
+                return;
+            }
+            if (a_event->device.get() != RE::INPUT_DEVICE::kKeyboard) return;
 
             if (a_event->idCode == g_settings.toggleKey) {
                 if (PPM::PhotoMode::Active()) {
@@ -224,6 +357,10 @@ namespace
                 spdlog::critical("PrismaPhotoMode: required runtime mappings are unavailable; photo mode disabled");
                 return;
             }
+            PPM::RuntimeSupport::ValidateTimeMappings(g_runtimeFamily);
+            PPM::RuntimeSupport::ValidateDepthOfFieldMappings(g_runtimeFamily);
+            PPM::RuntimeSupport::ValidateFilterMappings(g_runtimeFamily);
+            PPM::RuntimeSupport::ValidateCharacterMappings(g_runtimeFamily);
             g_api = PRISMA_UI_API::RequestPluginAPI<PRISMA_UI_API::IVPrismaUI10>();
             if (!g_api) {
                 spdlog::error("PrismaPhotoMode: PrismaUI_F4 V10 API unavailable; photo mode disabled");
@@ -263,9 +400,11 @@ F4SE_PLUGIN_VERSION = []() noexcept {
     v.PluginVersion({ 1, 0, 0, 0 });
     v.PluginName(kPluginName);
     v.AuthorName("NomadsReach");
+    v.UsesAddressLibraryNG(true);
     v.UsesAddressLibrary(true);
     v.UsesSigScanning(false);
     v.IsLayoutDependent(true);
+    v.IsLayoutDependentNG(true);
     v.HasNoStructUse(false);
     return v;
 }();
@@ -296,7 +435,13 @@ extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Query(const F4SE::QueryInterface* f
 
 extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Load(const F4SE::LoadInterface* f4se)
 {
-    if (g_runtimeFamily == PPM::RuntimeSupport::Family::Unsupported) return false;
+    if (g_runtimeFamily == PPM::RuntimeSupport::Family::Unsupported) SetupLogging();
+    g_runtimeVersion = f4se->RuntimeVersion();
+    g_runtimeFamily = PPM::RuntimeSupport::Classify(g_runtimeVersion);
+    if (g_runtimeFamily == PPM::RuntimeSupport::Family::Unsupported || f4se->IsEditor()) {
+        spdlog::error("PrismaPhotoMode: unsupported Fallout runtime {} or editor", g_runtimeVersion.string());
+        return false;
+    }
     F4SE::Init(f4se, F4SE::InitInfo{ .log = false });
     auto* messaging = F4SE::GetMessagingInterface();
     if (!messaging) return false;

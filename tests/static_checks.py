@@ -14,8 +14,13 @@ REQUIRED_IDS = (
     "fx-grain-toggle", "grain-amount", "fx-frame-toggle", "frame-width",
     "fx-grid", "fx-vignette", "fx-tint", "fx-grain", "fx-frame",
     "fx-letterbox-top", "fx-letterbox-bottom", "fx-letterbox-left", "fx-letterbox-right",
+    "overlay-category", "overlay-name", "fx-overlay", "grid-kind", "time-freeze", "timemult", "timemult-out", "hour", "hour-out", "timescale", "timescale-out",
+    "weather-select", "weather-clear-btn", "panel-scale", "panel-scale-out",
+    "fx-dof-toggle", "dof-distance", "dof-distance-out", "dof-auto",
+    "filter-select", "filter-strength", "filter-strength-out",
+    "pick-name", "freeze-btn", "release-btn", "face-btn", "idle-select", "idle-btn", "art-select", "art-btn", "shader-select", "shader-btn",
 )
-NATIVE_COMMANDS = ("fov", "speed", "focus", "screenshot", "reset", "exit")
+NATIVE_COMMANDS = ("fov", "speed", "focus", "screenshot", "reset", "exit", "freeze", "timemult", "hour", "timescale", "weather", "lists", "dof", "dofdist", "autofocus", "filter", "filterstrength", "pick", "pickfreeze", "face", "idle", "art", "shader")
 KEPT_OVERLAYS = ("#fx-vignette", "#fx-tint", "#fx-grain", "#fx-frame", "#fx-letterbox")
 
 
@@ -52,6 +57,14 @@ def check(root: Path) -> None:
     style = (views / "style.css").read_text(encoding="utf-8")
     if "window.pmSetState" not in app:
         raise SystemExit("app.js must expose window.pmSetState")
+    if "window.pmSetOverlays" not in app:
+        raise SystemExit("app.js must expose window.pmSetOverlays")
+    if "window.pmSetLists" not in app:
+        raise SystemExit("app.js must expose window.pmSetLists")
+    if "window.pmSetFilters" not in app:
+        raise SystemExit("app.js must expose window.pmSetFilters")
+    if "window.pmSetCharacters" not in app or "window.pmSetPick" not in app:
+        raise SystemExit("app.js must expose window.pmSetCharacters and window.pmSetPick")
     if '"pm_command"' not in app:
         raise SystemExit("app.js must call the pm_command listener")
 
@@ -70,12 +83,19 @@ def check(root: Path) -> None:
             raise SystemExit("style.css shooting rule must hide #panel and #fx-grid")
 
     main = (root / "src/main.cpp").read_text(encoding="utf-8")
-    native_used = set(re.findall(r'name == "([a-z]+)"', main))
-    missing = sorted(set(NATIVE_COMMANDS) - native_used)
+    handled = re.findall(r'name == "([a-z]+)"', main)
+    missing = sorted(set(NATIVE_COMMANDS) - set(handled))
     if missing:
         raise SystemExit(f"main.cpp does not handle commands: {', '.join(missing)}")
+    repeated = sorted(name for name, count in Counter(handled).items() if count > 1)
+    if repeated:
+        raise SystemExit(f"main.cpp matches command names more than once: {', '.join(repeated)}")
     if 'kCommandListener[] = "pm_command"' not in main or 'kStateCallback[] = "pmSetState"' not in main:
         raise SystemExit("main.cpp listener and state names must match app.js")
+    if 'kFiltersCallback[] = "pmSetFilters"' not in main:
+        raise SystemExit("main.cpp filters callback name must match app.js")
+    if 'kCharactersCallback[] = "pmSetCharacters"' not in main or 'kPickCallback[] = "pmSetPick"' not in main:
+        raise SystemExit("main.cpp characters and pick callback names must match app.js")
 
 
 if __name__ == "__main__":

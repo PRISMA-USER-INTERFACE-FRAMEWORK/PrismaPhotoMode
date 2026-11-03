@@ -44,6 +44,7 @@ target("PrismaPhotoMode")
     add_packages("spdlog")
 
     add_files("src/PhotoMode.cpp")
+    add_files("src/PhotoModeLists.cpp")
     add_files("src/RuntimeSupport.cpp")
     add_files("src/main.cpp")
     add_headerfiles("src/*.h")

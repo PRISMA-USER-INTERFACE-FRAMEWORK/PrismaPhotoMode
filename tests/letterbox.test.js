@@ -7,7 +7,8 @@ const elements = new Map();
 function element(id) {
   if (!elements.has(id)) {
     elements.set(id, {
-      checked: false, hidden: false, value: "", style: {},
+      checked: false, hidden: false, value: "", style: {}, dataset: {},
+      add() {}, removeAttribute() {},
       addEventListener(event, callback) { this[event] = callback; },
     });
   }
@@ -15,11 +16,14 @@ function element(id) {
 }
 const document = {
   getElementById: element,
+  querySelectorAll() { return []; },
   documentElement: { style: { setProperty() {} } },
   addEventListener() {},
 };
-const window = { innerWidth: 1920, innerHeight: 1080, addEventListener() {} };
-vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../assets/views/PrismaPhotoMode/app.js"), "utf8"), { document, window });
+const window = { innerWidth: 1920, innerHeight: 1080, addEventListener() {}, requestAnimationFrame() {} };
+const navigator = { getGamepads() { return []; } };
+class Option {}
+vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../assets/views/PrismaPhotoMode/app.js"), "utf8"), { document, window, navigator, Option, setInterval() {} });
 
 element("fx-letterbox-toggle").checked = true;
 element("letterbox-aspect").value = "2.39";

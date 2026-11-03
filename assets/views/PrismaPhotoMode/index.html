@@ -15,8 +15,12 @@
   <div id="fx-letterbox-bottom" class="fx bar" hidden></div>
   <div id="fx-letterbox-left" class="fx bar" hidden></div>
   <div id="fx-letterbox-right" class="fx bar" hidden></div>
-  <div id="fx-grid" class="fx" hidden>
-    <span class="v v1"></span><span class="v v2"></span><span class="h h1"></span><span class="h h2"></span>
+  <img id="fx-overlay" class="fx" alt="" hidden>
+  <div id="fx-grid" class="fx" hidden data-kind="thirds">
+    <span class="line t v v1"></span><span class="line t v v2"></span><span class="line t h h1"></span><span class="line t h h2"></span>
+    <span class="line g v v1"></span><span class="line g v v2"></span><span class="line g h h1"></span><span class="line g h h2"></span>
+    <span class="line c v v1"></span><span class="line c h h1"></span>
+    <svg class="d" viewBox="0 0 100 100" preserveAspectRatio="none"><line x1="0" y1="0" x2="100" y2="100"/><line x1="100" y1="0" x2="0" y2="100"/></svg>
   </div>
 
   <button id="show-panel" type="button" hidden>Show panel</button>
@@ -27,62 +31,169 @@
       <span id="focus-state">Camera</span>
     </header>
 
-    <section>
-      <h2>Camera</h2>
-      <label>Field of view <output id="fov-out">75</output>
-        <input id="fov" type="range" min="5" max="150" step="1" value="75">
-      </label>
-      <label>Camera speed <output id="speed-out">1.00</output>
-        <input id="speed" type="range" min="0.1" max="50" step="0.1" value="1">
-      </label>
-      <button id="focus-btn" type="button">Take mouse</button>
-    </section>
+    <nav class="tabs" aria-label="Photo mode tabs">
+      <button type="button" class="tab" data-tab="camera" aria-selected="true">Camera</button>
+      <button type="button" class="tab" data-tab="time" aria-selected="false">Time</button>
+      <button type="button" class="tab" data-tab="overlays" aria-selected="false">Overlays</button>
+      <button type="button" class="tab" data-tab="filters" aria-selected="false">Filters</button>
+      <button type="button" class="tab" data-tab="characters" aria-selected="false">Characters</button>
+      <button type="button" class="tab" data-tab="access" aria-selected="false">Access</button>
+    </nav>
 
-    <section>
-      <h2>Effects</h2>
-      <fieldset>
-        <label><input id="fx-grid-toggle" type="checkbox"> Rule-of-thirds grid</label>
-      </fieldset>
-      <fieldset>
-        <label><input id="fx-vignette-toggle" type="checkbox"> Vignette</label>
-        <label>Strength <output id="vignette-out">45</output>
-          <input id="vignette-strength" type="range" min="0" max="100" step="1" value="45">
+    <div data-tab-panel="camera">
+      <section>
+        <h2>Camera</h2>
+        <label>Field of view <output id="fov-out">75</output>
+          <input id="fov" type="range" min="5" max="150" step="1" value="75">
         </label>
-      </fieldset>
-      <fieldset>
-        <label><input id="fx-letterbox-toggle" type="checkbox"> Letterbox</label>
-        <label>Aspect
-          <select id="letterbox-aspect">
-            <option value="2.39">2.39:1</option>
-            <option value="2.35">2.35:1</option>
-            <option value="1.85">1.85:1</option>
-            <option value="1.78">16:9</option>
-            <option value="1.33">4:3</option>
-            <option value="1.00">1:1</option>
-          </select>
+        <label>Camera speed <output id="speed-out">1.00</output>
+          <input id="speed" type="range" min="0.1" max="50" step="0.1" value="1">
         </label>
-      </fieldset>
-      <fieldset>
-        <label><input id="fx-tint-toggle" type="checkbox"> Colour tint</label>
-        <label>Colour <input id="tint-color" type="color" value="#c08040"></label>
-        <label>Opacity <output id="tint-out">20</output>
-          <input id="tint-opacity" type="range" min="0" max="100" step="1" value="20">
+        <button id="focus-btn" type="button">Take mouse</button>
+      </section>
+
+      <section>
+        <h2>Effects</h2>
+        <fieldset>
+          <label><input id="fx-grid-toggle" type="checkbox"> Grid</label>
+          <label>Pattern
+            <select id="grid-kind">
+              <option value="thirds">Rule of thirds</option>
+              <option value="golden">Golden ratio</option>
+              <option value="center">Center cross</option>
+              <option value="diagonals">Diagonals</option>
+            </select>
+          </label>
+        </fieldset>
+        <fieldset>
+          <label><input id="fx-vignette-toggle" type="checkbox"> Vignette</label>
+          <label>Strength <output id="vignette-out">45</output>
+            <input id="vignette-strength" type="range" min="0" max="100" step="1" value="45">
+          </label>
+        </fieldset>
+        <fieldset>
+          <label><input id="fx-letterbox-toggle" type="checkbox"> Letterbox</label>
+          <label>Aspect
+            <select id="letterbox-aspect">
+              <option value="2.39">2.39:1</option>
+              <option value="2.35">2.35:1</option>
+              <option value="1.85">1.85:1</option>
+              <option value="1.78">16:9</option>
+              <option value="1.33">4:3</option>
+              <option value="1.00">1:1</option>
+            </select>
+          </label>
+        </fieldset>
+        <fieldset>
+          <label><input id="fx-tint-toggle" type="checkbox"> Colour tint</label>
+          <label>Colour <input id="tint-color" type="color" value="#c08040"></label>
+          <label>Opacity <output id="tint-out">20</output>
+            <input id="tint-opacity" type="range" min="0" max="100" step="1" value="20">
+          </label>
+        </fieldset>
+        <fieldset>
+          <label><input id="fx-grain-toggle" type="checkbox"> Film grain</label>
+          <label>Amount <output id="grain-out">35</output>
+            <input id="grain-amount" type="range" min="0" max="100" step="1" value="35">
+          </label>
+        </fieldset>
+        <fieldset>
+          <label><input id="fx-frame-toggle" type="checkbox"> Frame</label>
+          <label>Width <output id="frame-out">40</output>
+            <input id="frame-width" type="range" min="0" max="120" step="1" value="40">
+          </label>
+        </fieldset>
+        <fieldset>
+          <label><input id="fx-dof-toggle" type="checkbox"> Depth of field</label>
+          <label>Focus distance <output id="dof-distance-out">500</output>
+            <input id="dof-distance" type="range" min="50" max="5000" step="10" value="500">
+          </label>
+          <label><input id="dof-auto" type="checkbox"> Auto focus on picked ref</label>
+        </fieldset>
+        <button id="reset-effects-btn" type="button">Reset effects</button>
+      </section>
+    </div>
+
+    <div data-tab-panel="time" hidden>
+      <section>
+        <h2>Time</h2>
+        <fieldset>
+          <label><input id="time-freeze" type="checkbox"> Freeze time</label>
+        </fieldset>
+        <label>Time multiplier <output id="timemult-out">1.00</output>
+          <input id="timemult" type="range" min="0.01" max="2" step="0.01" value="1">
         </label>
-      </fieldset>
-      <fieldset>
-        <label><input id="fx-grain-toggle" type="checkbox"> Film grain</label>
-        <label>Amount <output id="grain-out">35</output>
-          <input id="grain-amount" type="range" min="0" max="100" step="1" value="35">
+        <label>Time of day <output id="hour-out">12:00</output>
+          <input id="hour" type="range" min="0" max="23.99" step="0.01" value="12">
         </label>
-      </fieldset>
-      <fieldset>
-        <label><input id="fx-frame-toggle" type="checkbox"> Frame</label>
-        <label>Width <output id="frame-out">40</output>
-          <input id="frame-width" type="range" min="0" max="120" step="1" value="40">
+        <label>Timescale <output id="timescale-out">1</output>x
+          <input id="timescale" type="range" min="1" max="1000" step="1" value="1">
         </label>
-      </fieldset>
-      <button id="reset-effects-btn" type="button">Reset effects</button>
-    </section>
+        <label>Weather
+          <select id="weather-select"><option value="">Current</option></select>
+        </label>
+        <button id="weather-clear-btn" type="button">Clear weather override</button>
+      </section>
+    </div>
+
+    <div data-tab-panel="overlays" hidden>
+      <section>
+        <h2>Overlays</h2>
+        <label>Category
+          <select id="overlay-category"><option value="">None</option></select>
+        </label>
+        <label>Overlay
+          <select id="overlay-name"><option value="">None</option></select>
+        </label>
+      </section>
+    </div>
+
+    <div data-tab-panel="filters" hidden>
+      <section>
+        <h2>Filters</h2>
+        <label>Image space modifier
+          <select id="filter-select"><option value="">None</option></select>
+        </label>
+        <label>Strength <output id="filter-strength-out">1.00</output>
+          <input id="filter-strength" type="range" min="0" max="1" step="0.05" value="1">
+        </label>
+      </section>
+    </div>
+
+    <div data-tab-panel="characters" hidden>
+      <section>
+        <h2>Characters</h2>
+        <p>Picked: <span id="pick-name">No reference picked</span></p>
+        <fieldset>
+          <button id="freeze-btn" type="button">Freeze</button>
+          <button id="release-btn" type="button">Release</button>
+          <button id="face-btn" type="button">Face camera</button>
+        </fieldset>
+        <label>Idle
+          <select id="idle-select"><option value="">None</option></select>
+        </label>
+        <button id="idle-btn" type="button">Play idle</button>
+        <label>Art object
+          <select id="art-select"><option value="">None</option></select>
+        </label>
+        <button id="art-btn" type="button">Apply art object</button>
+        <label>Effect shader
+          <select id="shader-select"><option value="">None</option></select>
+        </label>
+        <button id="shader-btn" type="button">Apply effect shader</button>
+      </section>
+    </div>
+
+    <div data-tab-panel="access" hidden>
+      <section>
+        <h2>Access</h2>
+        <label>Panel scale <output id="panel-scale-out">100</output>%
+          <input id="panel-scale" type="range" min="50" max="200" step="5" value="100">
+        </label>
+        <p>Mouse: click the panel. Keyboard: Up and Down move between controls, Left and Right change sliders, Tab or Escape releases the panel.</p>
+        <p>Gamepad: D-pad moves, A activates, LB and RB switch tabs, B releases the panel.</p>
+      </section>
+    </div>
 
     <section>
       <h2>Capture</h2>
