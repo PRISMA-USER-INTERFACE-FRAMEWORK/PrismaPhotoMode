@@ -164,7 +164,9 @@
     document.body.classList.add("shooting");
     window.setTimeout(() => {
       command("focus|0");
-      command("screenshot|");
+      const category = $("frame-category").value;
+      const frame = $("frame-name").value;
+      command(category && frame ? `screenshot|${encodeURIComponent(category)}|${encodeURIComponent(frame)}` : "screenshot|");
       window.setTimeout(() => {
         document.body.classList.remove("shooting");
         state.shooting = false;

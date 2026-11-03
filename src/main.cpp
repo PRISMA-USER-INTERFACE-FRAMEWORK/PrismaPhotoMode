@@ -18,6 +18,7 @@
 #include "PhotoMode.h"
 #include "PhotoModeLists.h"
 #include "RuntimeSupport.h"
+#include "Screenshot.h"
 
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
@@ -76,7 +77,7 @@ namespace
     constexpr float kMaxDofRange = 5000.0F;
     constexpr float kMaxLighting = 3.0F;
     constexpr float kMaxRoll = 90.0F;
-    constexpr std::size_t kTrampolineSize = 64;
+    constexpr std::size_t kTrampolineSize = 128;
 
     struct Settings
     {
@@ -333,7 +334,7 @@ namespace
         } else if (name == "focus") {
             SetFocus(value == "1");
         } else if (name == "screenshot") {
-            if (PPM::PhotoMode::Active() && !PPM::PhotoMode::QueueScreenshot()) spdlog::warn("PrismaPhotoMode: screenshot request was not queued");
+            if (PPM::PhotoMode::Active() && !PPM::Screenshot::Request(value)) spdlog::warn("PrismaPhotoMode: screenshot request was not queued");
         } else if (name == "reset") {
             PPM::PhotoMode::ResetCamera();
             PushState();
@@ -534,6 +535,7 @@ namespace
                 spdlog::error("PrismaPhotoMode: failed to create view '{}'", kViewPath);
                 return;
             }
+            PPM::Screenshot::Install(g_runtimeFamily);
             RE::MenuControls::GetSingleton()->handlers.emplace_back(&g_input);
             InstallPauseHook();
             RE::UI::GetSingleton()->RegisterSink<RE::MenuOpenCloseEvent>(&g_menuWatcher);

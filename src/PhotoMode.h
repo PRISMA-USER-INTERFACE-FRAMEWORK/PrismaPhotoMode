@@ -13,7 +13,6 @@ namespace PPM::PhotoMode
     void ResetCamera();
     [[nodiscard]] float CurrentFOV() noexcept;
     [[nodiscard]] float CurrentTranslateSpeed() noexcept;
-    bool QueueScreenshot();
 
     void SetFrozen(bool a_frozen);
     [[nodiscard]] bool Frozen() noexcept;

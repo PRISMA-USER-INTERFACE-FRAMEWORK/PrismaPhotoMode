@@ -21,6 +21,7 @@ const document = {
   querySelector() { return characterPanel; },
   querySelectorAll() { return []; },
   documentElement: { style: { setProperty() {} } },
+  body: { classList: { add() {}, remove() {} } },
   addEventListener() {},
 };
 let nextId = 0;
@@ -33,6 +34,7 @@ const navigator = { getGamepads() { gamepadReads++; return [pad]; } };
 const window = {
   innerWidth: 1920, innerHeight: 1080,
   addEventListener() {},
+  setTimeout(callback) { callback(); },
   requestAnimationFrame(callback) { const id = ++nextId; frames.set(id, callback); return id; },
   cancelAnimationFrame(id) { frames.delete(id); },
   pm_command(value) { calls.push(value); },
@@ -94,4 +96,9 @@ assert.deepEqual(calls, ["autofocus|1", "pick|1"]);
 window.pmSetState(JSON.stringify({ active: false, focused: false }));
 assert.equal(timers.size, 0);
 assert.equal(frames.size, 0);
-console.log("PrismaPhotoMode UI polling checks PASS");
+calls.length = 0;
+element("frame-category").value = "Fallout frames";
+element("frame-name").value = "vault 111.png";
+element("screenshot-btn").click();
+assert.deepEqual(calls, ["focus|0", "screenshot|Fallout%20frames|vault%20111.png"]);
+console.log("PrismaPhotoMode UI polling and screenshot command checks PASS");

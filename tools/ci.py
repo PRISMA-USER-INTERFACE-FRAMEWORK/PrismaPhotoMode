@@ -57,6 +57,10 @@ elif stage == "dll":
         args.append("--sdk=" + env["CLANGCL_SDK"])
     subprocess.run(args, cwd=root, env=env, check=True)
     subprocess.run(["xmake", "build", "-y", "PrismaPhotoMode"], cwd=root, env=env, check=True)
+    subprocess.run(["xmake", "build", "-y", "ScreenshotBlendTest"], cwd=root, env=env, check=True)
+    subprocess.run([str(root / "build-clang/windows/x64/release/ScreenshotBlendTest.exe")], cwd=root, env=env, check=True)
+    subprocess.run(["xmake", "build", "-y", "ScreenshotImageTest"], cwd=root, env=env, check=True)
+    subprocess.run([str(root / "build-clang/windows/x64/release/ScreenshotImageTest.exe")], cwd=root, env=env, check=True)
     dll = root / "build-clang/windows/x64/release/PrismaPhotoMode.dll"
     if not dll.is_file():
         raise SystemExit(f"Native build did not produce {dll}")

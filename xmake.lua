@@ -29,6 +29,7 @@ set_toolchains("clang-cl[llvm]")
 
 add_rules("mode.debug", "mode.release")
 add_requires("spdlog v1.16.0")
+add_requires("directxtex 2025.07", {configs = {dx12 = false}})
 
 if is_host("linux") then
     add_requireconfs("**.cmake", {system = true, override = true})
@@ -41,9 +42,11 @@ target("PrismaPhotoMode")
     set_runtimes("MD")
 
     add_deps("commonlibf4")
-    add_packages("spdlog")
+    add_packages("spdlog", "directxtex")
 
     add_files("src/PhotoMode.cpp")
+    add_files("src/Screenshot.cpp")
+    add_files("src/ScreenshotImage.cpp")
     add_files("src/PhotoModeLists.cpp")
     add_files("src/RuntimeSupport.cpp")
     add_files("src/main.cpp")
@@ -52,9 +55,29 @@ target("PrismaPhotoMode")
     set_pcxxheader("src/PCH.h")
 
     add_defines("COMMONLIB_RUNTIMECOUNT=3", "F4SE_EXPORTS", "WIN32_LEAN_AND_MEAN", "NOMINMAX")
-    add_syslinks("bcrypt", "version", "comctl32")
+    add_syslinks("bcrypt", "version", "comctl32", "d3d11", "windowscodecs", "ole32", "shell32", "uuid")
     set_targetdir("$(builddir)/windows/x64/$(mode)")
 
     if is_mode("release") then
         set_optimize("fastest")
     end
+
+
+target("ScreenshotBlendTest")
+    set_kind("binary")
+    set_runtimes("MD")
+    set_default(false)
+    add_files("tests/screenshot_blend.cpp")
+    add_includedirs("src")
+    set_targetdir("$(builddir)/windows/x64/$(mode)")
+
+
+target("ScreenshotImageTest")
+    set_kind("binary")
+    set_runtimes("MD")
+    set_default(false)
+    add_packages("directxtex")
+    add_files("tests/screenshot_image.cpp", "src/ScreenshotImage.cpp")
+    add_includedirs("src")
+    add_syslinks("d3d11", "windowscodecs", "ole32")
+    set_targetdir("$(builddir)/windows/x64/$(mode)")

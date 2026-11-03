@@ -448,12 +448,6 @@ namespace PPM::PhotoMode
         return setting ? setting->GetFloat() : 0.0F;
     }
 
-    bool QueueScreenshot()
-    {
-        const auto* controls = RE::MenuControls::GetSingleton();
-        return controls && controls->QueueScreenshot();
-    }
-
     void SetFrozen(bool a_frozen)
     {
         if (!g_active) return;
