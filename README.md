@@ -13,6 +13,7 @@ Download the `PrismaPhotoMode` CI artifact from a successful run and extract `Pr
 ## What it does
 
 - A hotkey (default F9) enters and leaves photo mode in gameplay only.
+- The pause menu has a Photo Mode entry when the panel is ready. It is disabled while the Pip-Boy is open.
 - On entry the free camera turns on, game time freezes, the HUD hides, and the photo panel shows.
 - On exit the camera, time, HUD and field of view are restored to their values from before entry.
 - The panel has a field-of-view slider, a camera speed slider, and buttons for focus, screenshot, reset and exit.
@@ -34,6 +35,8 @@ Download the `PrismaPhotoMode` CI artifact from a successful run and extract `Pr
 ## Configuration
 
 `config/PrismaPhotoMode.ini` ships to `Data/F4SE/Plugins/PrismaPhotoMode.ini`.
+With Mod Configuration Menu installed, the same settings are available under Prisma Photo Mode. MCM saves changed values in `Data/MCM/Settings/PrismaPhotoMode.ini`; these override the plugin INI and take effect after closing the pause menu.
+When upgrading an existing custom plugin INI, MCM initially displays its own defaults until each setting is changed in MCM. To use an MCM default instead of a custom plugin INI value, select another value first and then select the default.
 
 - `ToggleKey`: Windows virtual-key code for entering and leaving photo mode. Default 120 (F9).
 - `FocusKey`: virtual-key code for focus. Default 9 (Tab).

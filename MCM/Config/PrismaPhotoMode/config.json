@@ -1,0 +1,29 @@
+{
+  "modName": "PrismaPhotoMode",
+  "displayName": "Prisma Photo Mode",
+  "minMcmVersion": 2,
+  "content": [
+    { "type": "section", "text": "Controls" },
+    {
+      "id": "iToggleKey:General", "text": "Toggle key code", "type": "slider",
+      "help": "Keyboard code for opening and closing photo mode. Default: 120 (F9).",
+      "valueOptions": { "sourceType": "ModSettingInt", "min": 1, "max": 255, "step": 1 }
+    },
+    {
+      "id": "iFocusKey:General", "text": "Panel focus key code", "type": "slider",
+      "help": "Keyboard code for giving the panel focus. Default: 9 (Tab).",
+      "valueOptions": { "sourceType": "ModSettingInt", "min": 1, "max": 255, "step": 1 }
+    },
+    {
+      "id": "iFocusPadButton:General", "text": "Panel focus gamepad button", "type": "dropdown",
+      "help": "Gamepad button for panel focus. Default: Back.",
+      "valueOptions": { "sourceType": "ModSettingInt", "options": ["Disabled", "D-pad up", "D-pad down", "D-pad left", "D-pad right", "Start", "Back", "Left stick", "Right stick", "Left shoulder", "Right shoulder", "A", "B", "X", "Y", "Left trigger", "Right trigger"] }
+    },
+    { "type": "section", "text": "Display" },
+    {
+      "id": "iPanelScale:General", "text": "Panel size", "type": "slider",
+      "help": "Panel size in percent.",
+      "valueOptions": { "sourceType": "ModSettingInt", "min": 50, "max": 200, "step": 1, "formatString": "{1}%" }
+    }
+  ]
+}

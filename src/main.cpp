@@ -8,7 +8,10 @@
 #include <RE/I/InputEvent.h>
 #include <RE/M/MenuControls.h>
 #include <RE/M/MenuOpenCloseEvent.h>
+#include <RE/P/PauseMenu.h>
+#include <RE/P/PipboyMenu.h>
 #include <RE/U/UI.h>
+#include <RE/U/UIMessageQueue.h>
 
 #include "PrismaUI_F4_API.h"
 
@@ -20,6 +23,8 @@
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
+#include <array>
+#include <atomic>
 #include <charconv>
 #include <cmath>
 #include <cstdint>
@@ -36,6 +41,7 @@ namespace
     constexpr char kPluginName[] = "PrismaPhotoMode";
     constexpr char kViewPath[] = "PrismaPhotoMode/index.html";
     constexpr char kIniPath[] = "Data\\F4SE\\Plugins\\PrismaPhotoMode.ini";
+    constexpr char kMcmIniPath[] = "Data\\MCM\\Settings\\PrismaPhotoMode.ini";
     constexpr char kCommandListener[] = "pm_command";
     constexpr char kStateCallback[] = "pmSetState";
     constexpr char kListsCallback[] = "pmSetLists";
@@ -54,6 +60,14 @@ namespace
     constexpr std::uint32_t kDefaultToggleKey = 0x78;
     constexpr std::uint32_t kDefaultFocusKey = 0x09;
     constexpr std::uint32_t kDefaultFocusPadButton = 0x10020;
+    constexpr std::array kFocusPadButtons{
+        static_cast<RE::BS_BUTTON_CODE>(0), RE::BS_BUTTON_CODE::kDPAD_Up, RE::BS_BUTTON_CODE::kDPAD_Down,
+        RE::BS_BUTTON_CODE::kDPAD_Left, RE::BS_BUTTON_CODE::kDPAD_Right, RE::BS_BUTTON_CODE::kStart,
+        RE::BS_BUTTON_CODE::kBack, RE::BS_BUTTON_CODE::kLStick, RE::BS_BUTTON_CODE::kRStick,
+        RE::BS_BUTTON_CODE::kLShoulder, RE::BS_BUTTON_CODE::kRShoulder, RE::BS_BUTTON_CODE::kAButton,
+        RE::BS_BUTTON_CODE::kBButton, RE::BS_BUTTON_CODE::kXButton, RE::BS_BUTTON_CODE::kYButton,
+        RE::BS_BUTTON_CODE::kLTrigger, RE::BS_BUTTON_CODE::kRTrigger
+    };
     constexpr int kDefaultPanelScale = 100;
     constexpr int kMinPanelScale = 50;
     constexpr int kMaxPanelScale = 200;
@@ -79,6 +93,9 @@ namespace
     REL::Version g_runtimeVersion{};
     bool g_runtimeReady = false;
     bool g_domReady = false;
+    bool g_pauseHookReady = false;
+    std::atomic_bool g_pauseEntryPending{ false };
+    std::atomic_uint64_t g_pauseRequestGeneration{ 0 };
 
     std::uint32_t ReadKey(const char* a_name, std::uint32_t a_fallback)
     {
@@ -91,8 +108,15 @@ namespace
         g_settings.toggleKey = ReadKey("ToggleKey", kDefaultToggleKey);
         g_settings.focusKey = ReadKey("FocusKey", kDefaultFocusKey);
         g_settings.focusPadButton = GetPrivateProfileIntA("General", "FocusPadButton", static_cast<int>(kDefaultFocusPadButton), kIniPath);
+        const auto toggleKey = GetPrivateProfileIntA("General", "iToggleKey", static_cast<int>(g_settings.toggleKey), kMcmIniPath);
+        const auto focusKey = GetPrivateProfileIntA("General", "iFocusKey", static_cast<int>(g_settings.focusKey), kMcmIniPath);
+        if (toggleKey > 0 && toggleKey < 256) g_settings.toggleKey = toggleKey;
+        if (focusKey > 0 && focusKey < 256) g_settings.focusKey = focusKey;
+        const auto focusPadIndex = GetPrivateProfileIntA("General", "iFocusPadButton", -1, kMcmIniPath);
+        if (focusPadIndex < kFocusPadButtons.size()) g_settings.focusPadButton = static_cast<std::uint32_t>(kFocusPadButtons[focusPadIndex]);
         g_settings.panelScale = std::clamp(
-            static_cast<int>(GetPrivateProfileIntA("General", "PanelScale", kDefaultPanelScale, kIniPath)),
+            static_cast<int>(GetPrivateProfileIntA("General", "iPanelScale",
+                GetPrivateProfileIntA("General", "PanelScale", kDefaultPanelScale, kIniPath), kMcmIniPath)),
             kMinPanelScale,
             kMaxPanelScale);
     }
@@ -183,6 +207,85 @@ namespace
         PushOverlays();
         PushFilters();
         PushCharacters();
+    }
+
+    void CancelPauseEntry()
+    {
+        g_pauseEntryPending = false;
+        ++g_pauseRequestGeneration;
+    }
+
+    bool AddPauseEntry()
+    {
+        auto* ui = RE::UI::GetSingleton();
+        if (!g_pauseHookReady || !ViewReady() || !ui) return false;
+        auto menu = ui->GetMenu<RE::PauseMenu>();
+        if (!menu || !menu->uiMovie) return false;
+        auto& movie = menu->uiMovie;
+        Scaleform::GFx::Value list, entries;
+        if (!movie->GetVariable(&list, "root1.Menu_mc.MainPanel_mc.List_mc") || !list.IsObject() ||
+            !list.GetMember("entryList", &entries) || !entries.IsArray()) return false;
+        Scaleform::GFx::Value index;
+        bool found = false;
+        for (std::uint32_t i = 0; i < entries.GetArraySize(); ++i) {
+            Scaleform::GFx::Value item, text, marker, itemIndex;
+            if (!entries.GetElement(i, &item) || !item.IsObject()) continue;
+            if (item.GetMember("prismaPhotoMode", &marker) && marker.IsBoolean() && marker.GetBoolean()) {
+                if (!item.SetMember("disabled", ui->GetMenuOpen<RE::PipboyMenu>())) return false;
+                list.Invoke("InvalidateData");
+                return true;
+            }
+            if (item.GetMember("text", &text) && text.IsString() && text.GetString() &&
+                std::string_view(text.GetString()) == "$INSTALLED CONTENT" && item.GetMember("index", &itemIndex) &&
+                (itemIndex.IsNumber() || itemIndex.IsInt() || itemIndex.IsUInt())) {
+                index = itemIndex;
+                found = true;
+            }
+        }
+        if (!found) return false;
+        Scaleform::GFx::Value entry;
+        movie->CreateObject(&entry);
+        if (!entry.IsObject() || !entry.SetMember("text", "PHOTO MODE") ||
+            !entry.SetMember("disabled", ui->GetMenuOpen<RE::PipboyMenu>()) ||
+            !entry.SetMember("index", index) || !entry.SetMember("prismaPhotoMode", true) ||
+            !entries.PushBack(entry)) return false;
+        list.Invoke("InvalidateData");
+        return true;
+    }
+
+    using PauseMenuCall = void (*)(RE::PauseMenu*, const Scaleform::GFx::FunctionHandler::Params&);
+    PauseMenuCall g_originalPauseMenuCall = nullptr;
+
+    void OnPauseMenuCall(RE::PauseMenu* a_menu, const Scaleform::GFx::FunctionHandler::Params& a_params)
+    {
+        if (reinterpret_cast<std::uintptr_t>(a_params.userData) == 16 && a_menu && a_menu->uiMovie && ViewReady()) {
+            Scaleform::GFx::Value entry, marker, disabled;
+            auto* queue = RE::UIMessageQueue::GetSingleton();
+            if (queue && F4SE::GetTaskInterface() &&
+                a_menu->uiMovie->GetVariable(&entry, "root1.Menu_mc.MainPanel_mc.List_mc.selectedEntry") && entry.IsObject() &&
+                entry.GetMember("prismaPhotoMode", &marker) && marker.IsBoolean() && marker.GetBoolean() &&
+                entry.GetMember("disabled", &disabled) && disabled.IsBoolean() && !disabled.GetBoolean()) {
+                g_pauseEntryPending = true;
+                queue->AddMessage("PauseMenu", RE::UI_MESSAGE_TYPE::kHide);
+                return;
+            }
+        }
+        if (g_originalPauseMenuCall) g_originalPauseMenuCall(a_menu, a_params);
+    }
+
+    void InstallPauseHook()
+    {
+        REL::Relocation<std::uintptr_t> pauseTable{
+            RE::VTABLE::PauseMenu[0] // E:/RE-work/PrismaPhotoMode-RE-Work/pause-menu.md
+        };
+        MEMORY_BASIC_INFORMATION info{};
+        if (!pauseTable.address() || !VirtualQuery(reinterpret_cast<const void*>(pauseTable.address()), &info, sizeof(info)) ||
+            info.State != MEM_COMMIT || (info.Protect & (PAGE_GUARD | PAGE_NOACCESS))) return;
+        const auto original = reinterpret_cast<const std::uintptr_t*>(pauseTable.address())[1];
+        if (!original || !VirtualQuery(reinterpret_cast<const void*>(original), &info, sizeof(info)) ||
+            info.State != MEM_COMMIT || !(info.Protect & (PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY))) return;
+        g_originalPauseMenuCall = reinterpret_cast<PauseMenuCall>(pauseTable.write_vfunc(1, OnPauseMenuCall));
+        g_pauseHookReady = g_originalPauseMenuCall != nullptr;
     }
 
     void ExitMode()
@@ -365,8 +468,24 @@ namespace
     class PhotoModeMenuWatcher final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
     {
     public:
-        RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent&, RE::BSTEventSource<RE::MenuOpenCloseEvent>*) override
+        RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent& a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>*) override
         {
+            if (a_event.menuName == "PauseMenu") {
+                if (a_event.opening) {
+                    CancelPauseEntry();
+                    AddPauseEntry();
+                } else {
+                    LoadSettings();
+                    if (g_pauseEntryPending.exchange(false)) {
+                        const auto generation = g_pauseRequestGeneration.load();
+                        if (auto* tasks = F4SE::GetTaskInterface()) {
+                            tasks->AddTask([generation] {
+                                if (generation == g_pauseRequestGeneration.load()) EnterMode();
+                            });
+                        }
+                    }
+                }
+            }
             if (PPM::PhotoMode::Active() && !PPM::PhotoMode::InGameplayContext()) ExitMode();
             return RE::BSEventNotifyControl::kContinue;
         }
@@ -416,6 +535,7 @@ namespace
                 return;
             }
             RE::MenuControls::GetSingleton()->handlers.emplace_back(&g_input);
+            InstallPauseHook();
             RE::UI::GetSingleton()->RegisterSink<RE::MenuOpenCloseEvent>(&g_menuWatcher);
             g_runtimeReady = true;
             spdlog::info(
@@ -430,6 +550,7 @@ namespace
         case F4SE::MessagingInterface::kNewGame:
         case F4SE::MessagingInterface::kPreLoadGame:
         case F4SE::MessagingInterface::kPostLoadGame:
+            CancelPauseEntry();
             ExitMode();
             break;
 
@@ -441,7 +562,7 @@ namespace
 
 F4SE_PLUGIN_VERSION = []() noexcept {
     F4SE::PluginVersionData v{};
-    v.PluginVersion({ 1, 0, 0, 0 });
+    v.PluginVersion({ 1, 1, 0, 0 });
     v.PluginName(kPluginName);
     v.AuthorName("NomadsReach");
     v.UsesAddressLibraryNG(true);
