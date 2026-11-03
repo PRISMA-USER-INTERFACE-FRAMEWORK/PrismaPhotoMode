@@ -14,7 +14,7 @@ REQUIRED_IDS = (
     "fx-grain-toggle", "grain-amount", "fx-frame-toggle", "frame-width",
     "fx-grid", "fx-vignette", "fx-tint", "fx-grain", "fx-frame",
     "fx-letterbox-top", "fx-letterbox-bottom", "fx-letterbox-left", "fx-letterbox-right",
-    "overlay-category", "overlay-name", "fx-overlay", "grid-kind", "time-freeze", "timemult", "timemult-out", "hour", "hour-out", "timescale", "timescale-out",
+    "frame-category", "frame-name", "texture-category", "texture-name", "fx-overlay", "fx-texture", "grid-kind", "time-freeze", "timemult", "timemult-out", "hour", "hour-out", "timescale", "timescale-out",
     "weather-select", "weather-clear-btn", "panel-scale", "panel-scale-out",
     "fx-dof-toggle", "dof-distance", "dof-distance-out", "dof-strength", "dof-strength-out", "dof-range", "dof-range-out", "dof-auto",
     "filter-select", "filter-strength", "filter-strength-out",

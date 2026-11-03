@@ -14,8 +14,13 @@
     dof: { on: false, distance: 500, strength: 1, range: 300, auto: false },
   };
 
+  const LAYERS = [
+    { dir: "frames", category: "frame-category", name: "frame-name", img: "fx-overlay", items: [] },
+    { dir: "textures", category: "texture-category", name: "texture-name", img: "fx-texture", items: [] },
+  ];
+
   const $ = (id) => document.getElementById(id);
-  const state = { focused: false, shooting: false, active: false, panelScaleDefault: 100, overlays: [] };
+  const state = { focused: false, shooting: false, active: false, panelScaleDefault: 100 };
 
   function nativeCall(name, arg = "") {
     const fn = window[name];
@@ -95,8 +100,10 @@
   function resetEffects() {
     $("fx-grid-toggle").checked = DEFAULTS.grid;
     $("grid-kind").value = DEFAULTS.gridKind;
-    $("overlay-category").value = "";
-    setOverlayNames("");
+    LAYERS.forEach((layer) => {
+      $(layer.category).value = "";
+      setLayerNames(layer);
+    });
     $("fx-vignette-toggle").checked = DEFAULTS.vignette.on;
     $("vignette-strength").value = DEFAULTS.vignette.strength;
     $("fx-letterbox-toggle").checked = DEFAULTS.letterbox.on;
@@ -226,37 +233,37 @@
     }
   };
 
-  function setOverlayNames(categoryName) {
-    const select = $("overlay-name");
+  function setLayerNames(layer) {
+    const select = $(layer.name);
     select.textContent = "";
     select.add(new Option("None", ""));
-    const category = state.overlays.find((entry) => entry.name === categoryName);
+    const category = layer.items.find((entry) => entry.name === $(layer.category).value);
     if (category) category.overlays.forEach((name) => select.add(new Option(name, name)));
     select.value = "";
-    applyOverlay();
+    applyLayer(layer);
   }
 
-  function setOverlayCategories(categories) {
-    const select = $("overlay-category");
+  function setLayerCategories(layer, categories) {
+    const select = $(layer.category);
     select.textContent = "";
     select.add(new Option("None", ""));
     categories.forEach((category) => select.add(new Option(category.name, category.name)));
-    state.overlays = categories;
+    layer.items = categories;
     select.value = "";
-    setOverlayNames("");
+    setLayerNames(layer);
   }
 
-  function applyOverlay() {
-    const category = $("overlay-category").value;
-    const name = $("overlay-name").value;
-    const overlay = $("fx-overlay");
+  function applyLayer(layer) {
+    const category = $(layer.category).value;
+    const name = $(layer.name).value;
+    const image = $(layer.img);
     if (!category || !name) {
-      overlay.hidden = true;
-      overlay.removeAttribute("src");
+      image.hidden = true;
+      image.removeAttribute("src");
       return;
     }
-    overlay.src = `overlays/${encodeURIComponent(category)}/${encodeURIComponent(name)}`;
-    overlay.hidden = false;
+    image.src = `overlays/${layer.dir}/${encodeURIComponent(category)}/${encodeURIComponent(name)}`;
+    image.hidden = false;
   }
 
   window.pmSetOverlays = (payload) => {
@@ -267,7 +274,7 @@
       console.error("pmSetOverlays: bad payload", error);
       return;
     }
-    setOverlayCategories(Array.isArray(data.categories) ? data.categories : []);
+    LAYERS.forEach((layer) => setLayerCategories(layer, Array.isArray(data[layer.dir]) ? data[layer.dir] : []));
   };
 
   window.pmSetLists = (payload) => {
@@ -363,8 +370,10 @@
     command(`timescale|${event.target.value}`);
   });
   $("weather-select").addEventListener("change", (event) => command(`weather|${event.target.value}`));
-  $("overlay-category").addEventListener("change", (event) => setOverlayNames(event.target.value));
-  $("overlay-name").addEventListener("change", applyOverlay);
+  LAYERS.forEach((layer) => {
+    $(layer.category).addEventListener("change", () => setLayerNames(layer));
+    $(layer.name).addEventListener("change", () => applyLayer(layer));
+  });
   $("filter-select").addEventListener("change", (event) => command(`filter|${event.target.value || 0}`));
   $("filter-strength").addEventListener("input", (event) => {
     $("filter-strength-out").textContent = Number(event.target.value).toFixed(2);

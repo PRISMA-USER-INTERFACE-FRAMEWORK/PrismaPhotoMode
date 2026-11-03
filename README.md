@@ -32,6 +32,15 @@ Based on PhotoModeF4 by powerof3 (MIT). See `THIRD_PARTY_NOTICES`.
 - `FocusPadButton`: gamepad button code for focus. Default 65568 (Back, 0x10020). 0 disables it.
 - `PanelScale`: panel size in percent, 50 to 200. Default 100. The Access tab changes it until photo mode closes.
 
+## Overlays
+
+Frames and textures are PNG images in two folders:
+
+- `Data/PrismaUI_F4/views/PrismaPhotoMode/overlays/frames/<category>/*.png`
+- `Data/PrismaUI_F4/views/PrismaPhotoMode/overlays/textures/<category>/*.png`
+
+Each subfolder is a category. The Overlays tab has a Frames section and a Textures section, each with its own Category and item select. Textures are drawn under frames. Only `.png` files directly inside a category folder are listed. A missing folder gives an empty list.
+
 ## Status
 
 - Not tested in game. The plugin has not been built or run on a game install.

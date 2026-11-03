@@ -68,6 +68,42 @@ namespace PPM::PhotoModeLists
             json += ']';
             return json;
         }
+
+        std::string OverlayCategories(const std::filesystem::path& a_root)
+        {
+            namespace fs = std::filesystem;
+            std::error_code ec;
+            std::vector<fs::path> categories;
+            for (const auto& entry : fs::directory_iterator(a_root, ec)) {
+                if (entry.is_directory(ec)) categories.push_back(entry.path());
+            }
+            std::ranges::sort(categories);
+
+            std::string json{ "[" };
+            bool firstCategory = true;
+            for (const auto& category : categories) {
+                std::vector<std::string> names;
+                for (const auto& entry : fs::directory_iterator(category, ec)) {
+                    if (entry.is_regular_file(ec) && IsPng(entry.path())) names.push_back(entry.path().filename().string());
+                }
+                std::ranges::sort(names);
+
+                if (!firstCategory) json += ',';
+                firstCategory = false;
+                json += R"({"name":")";
+                AppendEscaped(json, category.filename().string());
+                json += R"(","overlays":[)";
+                for (std::size_t i = 0; i < names.size(); ++i) {
+                    if (i) json += ',';
+                    json += '"';
+                    AppendEscaped(json, names[i]);
+                    json += '"';
+                }
+                json += "]}";
+            }
+            json += ']';
+            return json;
+        }
     }
 
     std::string Build()
@@ -94,37 +130,7 @@ namespace PPM::PhotoModeLists
 
     std::string BuildOverlays()
     {
-        namespace fs = std::filesystem;
-        std::error_code ec;
-        std::vector<fs::path> categories;
-        for (const auto& entry : fs::directory_iterator(kOverlayRoot, ec)) {
-            if (entry.is_directory(ec)) categories.push_back(entry.path());
-        }
-        std::ranges::sort(categories);
-
-        std::string json{ R"({"categories":[)" };
-        bool firstCategory = true;
-        for (const auto& category : categories) {
-            std::vector<std::string> names;
-            for (const auto& entry : fs::directory_iterator(category, ec)) {
-                if (entry.is_regular_file(ec) && IsPng(entry.path())) names.push_back(entry.path().filename().string());
-            }
-            std::ranges::sort(names);
-
-            if (!firstCategory) json += ',';
-            firstCategory = false;
-            json += R"({"name":")";
-            AppendEscaped(json, category.filename().string());
-            json += R"(","overlays":[)";
-            for (std::size_t i = 0; i < names.size(); ++i) {
-                if (i) json += ',';
-                json += '"';
-                AppendEscaped(json, names[i]);
-                json += '"';
-            }
-            json += "]}";
-        }
-        json += "]}";
-        return json;
+        const std::filesystem::path root{ kOverlayRoot };
+        return std::string{ R"({"frames":)" } + OverlayCategories(root / "frames") + R"(,"textures":)" + OverlayCategories(root / "textures") + "}";
     }
 }

@@ -15,6 +15,7 @@
   <div id="fx-letterbox-bottom" class="fx bar" hidden></div>
   <div id="fx-letterbox-left" class="fx bar" hidden></div>
   <div id="fx-letterbox-right" class="fx bar" hidden></div>
+  <img id="fx-texture" class="fx" alt="" hidden>
   <img id="fx-overlay" class="fx" alt="" hidden>
   <div id="fx-grid" class="fx" hidden data-kind="thirds">
     <span class="line t v v1"></span><span class="line t v v2"></span><span class="line t h h1"></span><span class="line t h h2"></span>
@@ -144,12 +145,21 @@
 
     <div data-tab-panel="overlays" hidden>
       <section>
-        <h2>Overlays</h2>
+        <h2>Frames</h2>
         <label>Category
-          <select id="overlay-category"><option value="">None</option></select>
+          <select id="frame-category"><option value="">None</option></select>
         </label>
-        <label>Overlay
-          <select id="overlay-name"><option value="">None</option></select>
+        <label>Frame
+          <select id="frame-name"><option value="">None</option></select>
+        </label>
+      </section>
+      <section>
+        <h2>Textures</h2>
+        <label>Category
+          <select id="texture-category"><option value="">None</option></select>
+        </label>
+        <label>Texture
+          <select id="texture-name"><option value="">None</option></select>
         </label>
       </section>
     </div>
