@@ -507,6 +507,29 @@ namespace
         }
     }
 
+    bool EnsureView()
+    {
+        if (g_view) return true;
+        if (!g_api) return false;
+        g_view = g_api->CreateView(kViewPath, OnDomReady);
+        if (!g_view) {
+            spdlog::warn("PrismaPhotoMode: view '{}' not created yet; will retry", kViewPath);
+            return false;
+        }
+        PPM::Screenshot::Install(g_runtimeFamily);
+        RE::MenuControls::GetSingleton()->handlers.emplace_back(&g_input);
+        InstallPauseHook();
+        RE::UI::GetSingleton()->RegisterSink<RE::MenuOpenCloseEvent>(&g_menuWatcher);
+        g_runtimeReady = true;
+        spdlog::info(
+            "PrismaPhotoMode: runtime ready family={} version={} toggleKey={} focusKey={}",
+            PPM::RuntimeSupport::Name(g_runtimeFamily),
+            g_runtimeVersion.string(),
+            g_settings.toggleKey,
+            g_settings.focusKey);
+        return true;
+    }
+
     void HandleMessage(F4SE::MessagingInterface::Message* a_message)
     {
         if (!a_message) return;
@@ -530,22 +553,7 @@ namespace
                 spdlog::error("PrismaPhotoMode: PrismaUI_F4 V10 API unavailable; photo mode disabled");
                 return;
             }
-            g_view = g_api->CreateView(kViewPath, OnDomReady);
-            if (!g_view) {
-                spdlog::error("PrismaPhotoMode: failed to create view '{}'", kViewPath);
-                return;
-            }
-            PPM::Screenshot::Install(g_runtimeFamily);
-            RE::MenuControls::GetSingleton()->handlers.emplace_back(&g_input);
-            InstallPauseHook();
-            RE::UI::GetSingleton()->RegisterSink<RE::MenuOpenCloseEvent>(&g_menuWatcher);
-            g_runtimeReady = true;
-            spdlog::info(
-                "PrismaPhotoMode: runtime ready family={} version={} toggleKey={} focusKey={}",
-                PPM::RuntimeSupport::Name(g_runtimeFamily),
-                g_runtimeVersion.string(),
-                g_settings.toggleKey,
-                g_settings.focusKey);
+            EnsureView();
             break;
         }
 
@@ -554,6 +562,7 @@ namespace
         case F4SE::MessagingInterface::kPostLoadGame:
             CancelPauseEntry();
             ExitMode();
+            EnsureView();
             break;
 
         default:
