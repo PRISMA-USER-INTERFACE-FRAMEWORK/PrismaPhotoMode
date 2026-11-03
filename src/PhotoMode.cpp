@@ -705,9 +705,12 @@ namespace PPM::PhotoMode
             return;
         }
         auto* player = RE::PlayerCharacter::GetSingleton();
-        auto* root = player ? player->Get3D() : nullptr;
-        if (!root || root->GetAppCulled()) return;
-        root->SetAppCulled(true);
-        g_playerCulled.emplace_back(root);
+        if (!player) return;
+        RE::NiAVObject* roots[] = { player->Get3D(), player->firstPerson3D.get() };
+        for (auto* root : roots) {
+            if (!root || root->GetAppCulled()) continue;
+            root->SetAppCulled(true);
+            g_playerCulled.emplace_back(root);
+        }
     }
 }
