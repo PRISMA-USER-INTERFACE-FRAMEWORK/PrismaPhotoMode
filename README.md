@@ -39,7 +39,3 @@ Based on PhotoModeF4 by powerof3 (MIT). See `THIRD_PARTY_NOTICES`.
 - `deps/`: pinned commits for the framework header (`prisma-ui-framework.ref`) and CommonLibF4 (`commonlibf4.ref`).
 - `tests/`: static checks, run with `python -X utf8 tests/run_checks.py` (needs `PRISMA_UI_FRAMEWORK_ROOT` pointing at a Fallout-4-Prisma-UI-Framework checkout).
 - `tools/ci.py`: CI stages, `checks` and `dll`. `.github/workflows/ci.yml` runs them on GitHub-hosted runners.
-
-## Credits
-
-Engine-driving logic was ported from PhotoModeF4 by powerof3 (MIT). The license text is in `THIRD_PARTY_NOTICES`.
