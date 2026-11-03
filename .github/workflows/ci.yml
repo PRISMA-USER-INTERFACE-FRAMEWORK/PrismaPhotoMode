@@ -60,7 +60,7 @@ jobs:
       - name: Setup native Xmake
         uses: xmake-io/github-action-setup-xmake@3a1a5dddfc7fa625d9a698738334bf55655a861a
         with:
-          xmake-version: '3.0.4'
+          xmake-version: '3.0.9'
 
       - name: Ensure LLVM for clang-cl
         shell: pwsh
