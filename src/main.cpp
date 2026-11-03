@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <cmath>
 #include <cstdint>
 #include <format>
 #include <memory>
@@ -118,7 +119,7 @@ namespace
             PPM::PhotoMode::TimescaleMultiplier(),
             PPM::RuntimeSupport::TimeControlsAvailable() ? "true" : "false",
             g_settings.panelScale,
-            PPM::RuntimeSupport::LightingAvailable() ? "true" : "false",
+            PPM::PhotoMode::LightingActive() ? "true" : "false",
             PPM::PhotoMode::Brightness(),
             PPM::PhotoMode::Saturation(),
             PPM::PhotoMode::Contrast(),
@@ -200,7 +201,7 @@ namespace
         const auto* first = a_text.data();
         const auto* last = first + a_text.size();
         const auto result = std::from_chars(first, last, a_value);
-        return result.ec == std::errc{} && result.ptr == last;
+        return result.ec == std::errc{} && result.ptr == last && std::isfinite(a_value);
     }
 
     bool ParseUnsigned(std::string_view a_text, std::uint32_t& a_value)

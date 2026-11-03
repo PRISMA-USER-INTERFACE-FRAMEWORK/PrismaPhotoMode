@@ -41,6 +41,7 @@
 #include <numbers>
 #include <optional>
 #include <utility>
+#include <vector>
 
 namespace PPM::PhotoMode
 {
@@ -155,7 +156,7 @@ namespace PPM::PhotoMode
         float g_facedHeading{ 0.0F };
         RE::ObjectRefHandle g_idled{};
         RE::ObjectRefHandle g_expressed{};
-        bool g_playerHidden{ false };
+        std::vector<RE::NiPointer<RE::NiAVObject>> g_playerCulled;
 
         void ReleaseFrozen()
         {
@@ -234,10 +235,8 @@ namespace PPM::PhotoMode
 
         void ShowPlayer()
         {
-            if (!g_playerHidden) return;
-            g_playerHidden = false;
-            auto* player = RE::PlayerCharacter::GetSingleton();
-            if (auto* root = player ? player->Get3D() : nullptr) root->CullGeometry(false);
+            for (auto& root : g_playerCulled) root->SetAppCulled(false);
+            g_playerCulled.clear();
         }
 
         void StopFilter()
@@ -257,8 +256,8 @@ namespace PPM::PhotoMode
 
         void ReleaseLighting()
         {
-            if (!RuntimeSupport::LightingAvailable()) return;
-            if (auto* imgs = RE::ImageSpaceManager::GetSingleton()) imgs->overRideBaseData = nullptr;
+            if (!LightingActive()) return;
+            RE::ImageSpaceManager::GetSingleton()->overRideBaseData = nullptr;
         }
 
         constexpr float kDegToRad = std::numbers::pi_v<float> / 180.0F;
@@ -580,6 +579,13 @@ namespace PPM::PhotoMode
         imgs->overRideBaseData = &g_lighting;
     }
 
+    bool LightingActive() noexcept
+    {
+        if (!RuntimeSupport::LightingAvailable()) return false;
+        const auto* imgs = RE::ImageSpaceManager::GetSingleton();
+        return imgs && imgs->overRideBaseData == &g_lighting;
+    }
+
     void SetBrightness(float a_value)
     {
         if (g_active && RuntimeSupport::LightingAvailable()) g_lighting.cinematicData.brightness = a_value;
@@ -700,8 +706,8 @@ namespace PPM::PhotoMode
         }
         auto* player = RE::PlayerCharacter::GetSingleton();
         auto* root = player ? player->Get3D() : nullptr;
-        if (!root) return;
-        root->CullGeometry(true);
-        g_playerHidden = true;
+        if (!root || root->GetAppCulled()) return;
+        root->SetAppCulled(true);
+        g_playerCulled.emplace_back(root);
     }
 }

@@ -35,6 +35,7 @@ namespace PPM::PhotoMode
     void SetFilterStrength(float a_strength);
 
     void ResetLighting();
+    [[nodiscard]] bool LightingActive() noexcept;
     void SetBrightness(float a_value);
     void SetSaturation(float a_value);
     void SetContrast(float a_value);
