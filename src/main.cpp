@@ -53,6 +53,8 @@ namespace
     constexpr int kDefaultPanelScale = 100;
     constexpr int kMinPanelScale = 50;
     constexpr int kMaxPanelScale = 200;
+    constexpr float kMinDofDistance = 50.0F;
+    constexpr float kMaxDofDistance = 5000.0F;
 
     struct Settings
     {
@@ -206,6 +208,12 @@ namespace
             std::uint32_t id = 0;
             ParseUnsigned(value, id);
             PPM::PhotoMode::SetWeather(id);
+        } else if (name == "dof") {
+            PPM::PhotoMode::SetDepthOfField(value == "1");
+        } else if (name == "dofdist") {
+            if (ParseFloat(value, number)) PPM::PhotoMode::SetDepthOfFieldDistance(std::clamp(number, kMinDofDistance, kMaxDofDistance));
+        } else if (name == "autofocus") {
+            PPM::PhotoMode::SetAutoFocus(value == "1");
         } else if (name == "lists") {
             PushLists();
         } else if (name == "exit") {
@@ -298,6 +306,7 @@ namespace
                 return;
             }
             PPM::RuntimeSupport::ValidateTimeMappings(g_runtimeFamily);
+            PPM::RuntimeSupport::ValidateDepthOfFieldMappings(g_runtimeFamily);
             g_api = PRISMA_UI_API::RequestPluginAPI<PRISMA_UI_API::IVPrismaUI10>();
             if (!g_api) {
                 spdlog::error("PrismaPhotoMode: PrismaUI_F4 V10 API unavailable; photo mode disabled");

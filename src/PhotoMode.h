@@ -24,4 +24,8 @@ namespace PPM::PhotoMode
     void SetTimescaleMultiplier(float a_multiplier);
     [[nodiscard]] float TimescaleMultiplier() noexcept;
     void SetWeather(std::uint32_t a_formID);
+
+    void SetDepthOfField(bool a_on);
+    void SetDepthOfFieldDistance(float a_distance);
+    void SetAutoFocus(bool a_on);
 }

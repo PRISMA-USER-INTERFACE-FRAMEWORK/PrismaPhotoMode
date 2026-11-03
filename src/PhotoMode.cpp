@@ -5,8 +5,10 @@
 #include <RE/B/BSTimer.h>
 #include <RE/C/Calendar.h>
 #include <RE/C/CameraStates.h>
+#include <RE/C/Console.h>
 #include <RE/C/ControlMap.h>
 #include <RE/H/HUDModeType.h>
+#include <RE/I/ImageSpaceModifierInstanceDOF.h>
 #include <RE/M/Main.h>
 #include <RE/M/MenuControls.h>
 #include <RE/P/PlayerCamera.h>
@@ -21,6 +23,8 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
+#include <optional>
 
 namespace PPM::PhotoMode
 {
@@ -46,6 +50,62 @@ namespace PPM::PhotoMode
         bool g_active{ false };
         float g_timescaleMult{ 1.0F };
         bool g_weatherForced{ false };
+
+        constexpr float kDefaultDofDistance = 500.0F;
+        constexpr float kDofRange = 300.0F;
+        constexpr float kDofDuration = 1.0e6F;
+        constexpr float kDofRetriggerDistance = 1.0F;
+
+        RE::ImageSpaceModifierInstanceDOF* g_dof{ nullptr };
+        float g_dofAppliedDistance{ 0.0F };
+        float g_dofDistance{ kDefaultDofDistance };
+        bool g_dofOn{ false };
+        bool g_autoFocus{ false };
+
+        std::optional<float> PickedDistance()
+        {
+            if (!RuntimeSupport::DepthOfFieldAvailable()) return std::nullopt;
+            const auto ref = RE::Console::GetCurrentPickREFR().get();
+            const auto* camera = RE::PlayerCamera::GetSingleton();
+            RE::NiPoint3 cameraPosition{};
+            if (!ref || !camera || !camera->GetCameraPosition(cameraPosition, true)) return std::nullopt;
+            return (ref->GetPosition() - cameraPosition).Length();
+        }
+
+        void StopDepthOfField()
+        {
+            if (!g_dof) return;
+            g_dof->Stop();
+            g_dof = nullptr;
+        }
+
+        void ApplyDepthOfField()
+        {
+            if (!g_active || !g_dofOn || !RuntimeSupport::DepthOfFieldAvailable()) {
+                StopDepthOfField();
+                return;
+            }
+            const auto distance = g_autoFocus ? PickedDistance().value_or(g_dofDistance) : g_dofDistance;
+            if (g_dof && std::abs(distance - g_dofAppliedDistance) < kDofRetriggerDistance) return;
+            StopDepthOfField();
+            g_dof = RE::ImageSpaceModifierInstanceDOF::Trigger(
+                distance,
+                kDofRange,
+                0.0F,
+                0.0F,
+                RE::ImageSpaceModifierInstanceDOF::DepthOfFieldMode::kFrontBack,
+                1.0F,
+                kDofDuration);
+            g_dofAppliedDistance = distance;
+        }
+
+        void ResetDepthOfField()
+        {
+            StopDepthOfField();
+            g_dofOn = false;
+            g_autoFocus = false;
+            g_dofDistance = kDefaultDofDistance;
+        }
 
         bool IsFreeCamera(RE::PlayerCamera* a_camera)
         {
@@ -159,6 +219,7 @@ namespace PPM::PhotoMode
         if (saves) saves->savingAllowed = g_snapshot.savingAllowed;
         ReleaseWeather();
         RestoreTime();
+        ResetDepthOfField();
         SetFOV(g_snapshot.fov);
         SetTranslateSpeed(g_snapshot.translateSpeed);
         RE::SendHUDMessage::PopHUDMode(RE::HUDModeType(kHudMode));
@@ -267,5 +328,23 @@ namespace PPM::PhotoMode
         }
         sky->ForceWeather(weather, true);
         g_weatherForced = true;
+    }
+
+    void SetDepthOfField(bool a_on)
+    {
+        g_dofOn = a_on;
+        ApplyDepthOfField();
+    }
+
+    void SetDepthOfFieldDistance(float a_distance)
+    {
+        g_dofDistance = a_distance;
+        ApplyDepthOfField();
+    }
+
+    void SetAutoFocus(bool a_on)
+    {
+        g_autoFocus = a_on;
+        ApplyDepthOfField();
     }
 }

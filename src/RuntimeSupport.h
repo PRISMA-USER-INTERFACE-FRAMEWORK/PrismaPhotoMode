@@ -20,4 +20,6 @@ namespace PPM::RuntimeSupport
     [[nodiscard]] bool ValidateMappings(Family family);
     void ValidateTimeMappings(Family family);
     [[nodiscard]] bool TimeControlsAvailable() noexcept;
+    void ValidateDepthOfFieldMappings(Family family);
+    [[nodiscard]] bool DepthOfFieldAvailable() noexcept;
 }

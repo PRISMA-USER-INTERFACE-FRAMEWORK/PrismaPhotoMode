@@ -42,6 +42,11 @@ namespace PPM::RuntimeSupport
         constexpr REL::VariantID kForceWeather{ 698558, 2208861, 2208861 };
         constexpr REL::VariantID kResetWeather{ 6511, 2208860, 2208860 };
         constexpr REL::VariantID kTESDataHandlerSingleton{ 711558, 2688883, 4796135 };
+        constexpr REL::VariantID kDOFTrigger{ 1158048, 2199922, 2199922 };
+        constexpr REL::VariantID kIMIStop{ 1298537, 2199897, 2199897 };
+        constexpr REL::VariantID kGetCameraPosition{ 1574794, 2248334, 2248334 };
+        constexpr REL::VariantID kGetCurrentPickIndex{ 1407033, 2701382, 2701382 };
+        constexpr REL::VariantID kGetPickRefs{ 875116, 2701391, 2701391 };
 
         const std::array kCoreMappings{
             Mapping{ "PlayerCamera::ToggleFreeCameraMode", &kToggleFreeCameraMode, Kind::Function },
@@ -64,7 +69,16 @@ namespace PPM::RuntimeSupport
             Mapping{ "TESDataHandler::Singleton", &kTESDataHandlerSingleton, Kind::Global }
         };
 
+        const std::array kDepthOfFieldMappings{
+            Mapping{ "ImageSpaceModifierInstanceDOF::Trigger", &kDOFTrigger, Kind::Function },
+            Mapping{ "ImageSpaceModifierInstance::Stop", &kIMIStop, Kind::Function },
+            Mapping{ "PlayerCamera::GetCameraPosition", &kGetCameraPosition, Kind::Function },
+            Mapping{ "Console::GetCurrentPickIndex", &kGetCurrentPickIndex, Kind::Global },
+            Mapping{ "Console::GetPickRefs", &kGetPickRefs, Kind::Global }
+        };
+
         bool g_timeControlsAvailable{ false };
+        bool g_depthOfFieldAvailable{ false };
 
         bool ResolveMappings(std::span<const Mapping> a_mappings, Family a_family)
         {
@@ -148,5 +162,15 @@ namespace PPM::RuntimeSupport
     bool TimeControlsAvailable() noexcept
     {
         return g_timeControlsAvailable;
+    }
+
+    void ValidateDepthOfFieldMappings(Family a_family)
+    {
+        g_depthOfFieldAvailable = ResolveMappings(kDepthOfFieldMappings, a_family);
+    }
+
+    bool DepthOfFieldAvailable() noexcept
+    {
+        return g_depthOfFieldAvailable;
     }
 }

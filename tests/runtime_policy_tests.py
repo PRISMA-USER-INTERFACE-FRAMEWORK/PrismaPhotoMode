@@ -49,6 +49,11 @@ for name in (
     "TESDataHandler::Singleton",
     "BGSSaveLoadManager::Singleton",
     "UI::Singleton",
+    "ImageSpaceModifierInstanceDOF::Trigger",
+    "ImageSpaceModifierInstance::Stop",
+    "PlayerCamera::GetCameraPosition",
+    "Console::GetCurrentPickIndex",
+    "Console::GetPickRefs",
 ):
     assert f'"{name}"' in runtime, f"RuntimeSupport.cpp must validate {name}"
 
@@ -77,6 +82,11 @@ for triple in (
     "698558, 2208861, 2208861",
     "6511, 2208860, 2208860",
     "711558, 2688883, 4796135",
+    "1158048, 2199922, 2199922",
+    "1298537, 2199897, 2199897",
+    "1574794, 2248334, 2248334",
+    "1407033, 2701382, 2701382",
+    "875116, 2701391, 2701391",
 ):
     assert re.search(rf"REL::VariantID k\w+\{{ {re.escape(triple)} \}}", runtime), f"RuntimeSupport.cpp must carry the verified NG id triple {triple}"
 
@@ -87,5 +97,6 @@ assert "Kind::Function ? inSection(text)" in runtime, "function mappings must re
 assert "enum class Family" in runtime_header
 assert "ValidateMappings" in main and "ValidateMappings(g_runtimeFamily)" in main
 assert "ValidateTimeMappings(g_runtimeFamily)" in main, "main.cpp must gate the time controls through ValidateTimeMappings"
+assert "ValidateDepthOfFieldMappings(g_runtimeFamily)" in main, "main.cpp must gate depth of field through ValidateDepthOfFieldMappings"
 
 print("PrismaPhotoMode runtime and PrismaUI policy tests passed")

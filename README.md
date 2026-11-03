@@ -10,6 +10,7 @@ Based on PhotoModeF4 by powerof3 (MIT). See `THIRD_PARTY_NOTICES`.
 - On entry the free camera turns on, game time freezes, the HUD hides, and the photo panel shows.
 - On exit the camera, time, HUD and field of view are restored to their values from before entry.
 - The panel has a field-of-view slider, a camera speed slider, and buttons for focus, screenshot, reset and exit.
+- Depth of field has a focus distance slider. Auto focus follows the picked reference (the console pick) and uses the manual distance when nothing is picked.
 - Visual effects are CSS overlays in the panel view: vignette, letterbox with an aspect picker, colour tint, film grain, frame, and a rule-of-thirds grid.
 - The screenshot action hides the panel and grid and keeps the overlays. Whether the engine screenshot captures the web overlays is not verified in game.
 
@@ -31,7 +32,7 @@ Based on PhotoModeF4 by powerof3 (MIT). See `THIRD_PARTY_NOTICES`.
 ## Status
 
 - Not tested in game. The plugin has not been built or run on a game install.
-- Supported runtimes: Fallout 4 1.10.163 (OG) and 1.11.137 or later (AE). The 1.10.984 (NG) runtime is rejected until its ids are verified, so photo mode stays off there.
+- Supported runtimes: Fallout 4 1.10.163 (OG), 1.10.984 (NG) and 1.11.137 or later (AE).
 - Mouse passthrough while the panel is unfocused is not implemented. Keyboard and mouse go to the panel while it has focus.
 
 ## Layout

@@ -11,6 +11,7 @@
     tint: { on: false, color: "#c08040", opacity: 20 },
     grain: { on: false, amount: 35 },
     frame: { on: false, width: 40 },
+    dof: { on: false, distance: 500, auto: false },
   };
 
   const $ = (id) => document.getElementById(id);
@@ -107,6 +108,12 @@
     $("grain-amount").value = DEFAULTS.grain.amount;
     $("fx-frame-toggle").checked = DEFAULTS.frame.on;
     $("frame-width").value = DEFAULTS.frame.width;
+    $("fx-dof-toggle").checked = DEFAULTS.dof.on;
+    $("dof-distance").value = DEFAULTS.dof.distance;
+    $("dof-distance-out").textContent = DEFAULTS.dof.distance;
+    $("dof-auto").checked = DEFAULTS.dof.auto;
+    command("dof|0");
+    command("autofocus|0");
     applyEffects();
   }
 
@@ -411,6 +418,16 @@
     }
     window.requestAnimationFrame(pollGamepad);
   }
+
+  $("fx-dof-toggle").addEventListener("change", (event) => command(`dof|${event.target.checked ? 1 : 0}`));
+  $("dof-distance").addEventListener("input", (event) => {
+    $("dof-distance-out").textContent = event.target.value;
+    command(`dofdist|${event.target.value}`);
+  });
+  $("dof-auto").addEventListener("change", (event) => command(`autofocus|${event.target.checked ? 1 : 0}`));
+  setInterval(() => {
+    if (state.active && $("dof-auto").checked) command("autofocus|1");
+  }, 250);
 
   $("panel-scale").addEventListener("input", (event) => applyPanelScale(Number(event.target.value)));
 
