@@ -4,6 +4,7 @@
 #include <RE/A/Actor.h>
 #include <RE/A/AIProcess.h>
 #include <RE/B/BGSArtObject.h>
+#include <RE/B/BGSKeyword.h>
 #include <RE/B/BGSSaveLoadManager.h>
 #include <RE/B/BSPointerHandle.h>
 #include <RE/B/BSTimer.h>
@@ -12,11 +13,16 @@
 #include <RE/C/Console.h>
 #include <RE/C/ControlMap.h>
 #include <RE/H/HUDModeType.h>
+#include <RE/I/ImageSpaceManager.h>
 #include <RE/I/ImageSpaceModifierInstanceDOF.h>
 #include <RE/I/ImageSpaceModifierInstanceForm.h>
 #include <RE/M/Main.h>
 #include <RE/M/MenuControls.h>
+#include <RE/N/NiAVObject.h>
+#include <RE/N/NiMatrix3.h>
+#include <RE/N/NiNode.h>
 #include <RE/P/PlayerCamera.h>
+#include <RE/P/PlayerCharacter.h>
 #include <RE/S/SendHUDMessage.h>
 #include <RE/S/Setting.h>
 #include <RE/S/Sky.h>
@@ -27,13 +33,17 @@
 #include <RE/T/TESImageSpaceModifier.h>
 #include <RE/T/TESWeather.h>
 #include <RE/U/UserEvents.h>
+#include <REL/Trampoline.h>
 
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <numbers>
 #include <optional>
+#include <utility>
+#include <vector>
 
 namespace PPM::PhotoMode
 {
@@ -61,13 +71,16 @@ namespace PPM::PhotoMode
         bool g_weatherForced{ false };
 
         constexpr float kDefaultDofDistance = 500.0F;
-        constexpr float kDofRange = 300.0F;
+        constexpr float kDefaultDofRange = 300.0F;
+        constexpr float kDefaultDofStrength = 1.0F;
         constexpr float kDofDuration = 1.0e6F;
         constexpr float kDofRetriggerDistance = 1.0F;
 
         RE::NiPointer<RE::ImageSpaceModifierInstanceDOF> g_dof{};
         float g_dofAppliedDistance{ 0.0F };
         float g_dofDistance{ kDefaultDofDistance };
+        float g_dofRange{ kDefaultDofRange };
+        float g_dofStrength{ kDefaultDofStrength };
         bool g_dofOn{ false };
         bool g_autoFocus{ false };
 
@@ -99,11 +112,11 @@ namespace PPM::PhotoMode
             StopDepthOfField();
             g_dof = RE::ImageSpaceModifierInstanceDOF::Trigger(
                 distance,
-                kDofRange,
+                g_dofRange,
                 0.0F,
                 0.0F,
                 RE::ImageSpaceModifierInstanceDOF::DepthOfFieldMode::kFrontBack,
-                1.0F,
+                g_dofStrength,
                 kDofDuration);
             g_dofAppliedDistance = distance;
         }
@@ -114,6 +127,8 @@ namespace PPM::PhotoMode
             g_dofOn = false;
             g_autoFocus = false;
             g_dofDistance = kDefaultDofDistance;
+            g_dofRange = kDefaultDofRange;
+            g_dofStrength = kDefaultDofStrength;
         }
 
         constexpr float kDefaultFilterStrength = 1.0F;
@@ -142,6 +157,8 @@ namespace PPM::PhotoMode
         RE::ObjectRefHandle g_faced{};
         float g_facedHeading{ 0.0F };
         RE::ObjectRefHandle g_idled{};
+        RE::ObjectRefHandle g_expressed{};
+        std::vector<RE::NiPointer<RE::NiAVObject>> g_playerCulled;
 
         void ReleaseFrozen()
         {
@@ -169,11 +186,59 @@ namespace PPM::PhotoMode
             if (actor && actor->currentProcess) actor->currentProcess->StopCurrentIdle(actor, true, false);
         }
 
+        void PlayIdleOn(RE::Actor* a_actor, std::uint32_t a_formID)
+        {
+            auto* idle = FindForm<RE::TESIdleForm>(a_formID);
+            if (!a_actor || !idle || !a_actor->currentProcess) return;
+            StopIdled();
+            a_actor->currentProcess->PlayIdle(*a_actor, idle, nullptr);
+            g_idled = a_actor->GetHandle();
+        }
+
+        RE::BGSKeyword* FindExpression(std::uint32_t a_formID)
+        {
+            if (!a_formID) return nullptr;
+            const auto keywords = RE::BGSKeyword::GetTypedKeywords();
+            if (!keywords) return nullptr;
+            for (auto* keyword : (*keywords)[std::to_underlying(RE::KeywordType::kAnimFaceArchetype)]) {
+                if (keyword && keyword->GetFormID() == a_formID) return keyword;
+            }
+            return nullptr;
+        }
+
+        void ClearExpressed()
+        {
+            const auto ref = g_expressed.get();
+            auto* actor = ref ? ref->As<RE::Actor>() : nullptr;
+            g_expressed = RE::ObjectRefHandle{};
+            if (actor) RuntimeSupport::ChangeAnimFaceArchetype(actor, nullptr);
+        }
+
+        void ApplyExpressionOn(RE::Actor* a_actor, std::uint32_t a_formID)
+        {
+            if (!a_actor) return;
+            auto* keyword = FindExpression(a_formID);
+            if (a_formID && !keyword) {
+                spdlog::warn("PrismaPhotoMode: expression {:X} is not a known AnimFaceArchetype keyword", a_formID);
+                return;
+            }
+            ClearExpressed();
+            RuntimeSupport::ChangeAnimFaceArchetype(a_actor, keyword);
+            g_expressed = a_actor->GetHandle();
+        }
+
         void ResetPicked()
         {
             ReleaseFrozen();
             RestoreFaced();
             StopIdled();
+            ClearExpressed();
+        }
+
+        void ShowPlayer()
+        {
+            for (auto& root : g_playerCulled) root->SetAppCulled(false);
+            g_playerCulled.clear();
         }
 
         void StopFilter()
@@ -187,6 +252,24 @@ namespace PPM::PhotoMode
         {
             StopFilter();
             g_filterStrength = kDefaultFilterStrength;
+        }
+
+        RE::ImageSpaceBaseData g_lighting{};
+
+        void ReleaseLighting()
+        {
+            if (!LightingActive()) return;
+            RE::ImageSpaceManager::GetSingleton()->overRideBaseData = nullptr;
+        }
+
+        constexpr float kDegToRad = std::numbers::pi_v<float> / 180.0F;
+        float g_viewRoll{ 0.0F };
+        using FromEulerAnglesZXYFn = void (*)(RE::NiMatrix3*, float, float, float);
+        FromEulerAnglesZXYFn g_fromEulerAnglesZXY{ nullptr };
+
+        void ViewRollThunk(RE::NiMatrix3* a_matrix, float a_z, float a_x, float a_y)
+        {
+            g_fromEulerAnglesZXY(a_matrix, a_z, a_x, g_active ? g_viewRoll * kDegToRad : a_y);
         }
 
         bool IsFreeCamera(RE::PlayerCamera* a_camera)
@@ -285,6 +368,7 @@ namespace PPM::PhotoMode
         g_weatherForced = false;
         RE::SendHUDMessage::PushHUDMode(RE::HUDModeType(kHudMode));
         g_active = true;
+        ResetLighting();
         spdlog::info("PrismaPhotoMode: entered freeCamera={} fov={:.1f}", g_snapshot.freeCamera, g_snapshot.fov);
         return true;
     }
@@ -303,9 +387,12 @@ namespace PPM::PhotoMode
         RestoreTime();
         ResetDepthOfField();
         ResetFilter();
+        ReleaseLighting();
         ResetPicked();
+        ShowPlayer();
         SetFOV(g_snapshot.fov);
         SetTranslateSpeed(g_snapshot.translateSpeed);
+        g_viewRoll = 0.0F;
         RE::SendHUDMessage::PopHUDMode(RE::HUDModeType(kHudMode));
         g_active = false;
         spdlog::info("PrismaPhotoMode: exited");
@@ -327,6 +414,26 @@ namespace PPM::PhotoMode
         if (!g_active) return;
         SetFOV(g_snapshot.fov);
         SetTranslateSpeed(g_snapshot.translateSpeed);
+        g_viewRoll = 0.0F;
+    }
+
+    void InstallViewRoll()
+    {
+        const auto site = RuntimeSupport::ViewRollCallSite();
+        if (!site || g_fromEulerAnglesZXY) return;
+        g_fromEulerAnglesZXY = reinterpret_cast<FromEulerAnglesZXYFn>(REL::GetTrampoline().write_call<5>(site, &ViewRollThunk));
+        spdlog::info("PrismaPhotoMode: view roll hook installed at 0x{:X}", site);
+    }
+
+    void SetViewRoll(float a_degrees)
+    {
+        if (!g_active || !RuntimeSupport::ViewRollAvailable()) return;
+        g_viewRoll = a_degrees;
+    }
+
+    float ViewRoll() noexcept
+    {
+        return g_viewRoll;
     }
 
     float CurrentFOV() noexcept
@@ -426,6 +533,18 @@ namespace PPM::PhotoMode
         ApplyDepthOfField();
     }
 
+    void SetDepthOfFieldStrength(float a_strength)
+    {
+        g_dofStrength = a_strength;
+        if (g_dof) g_dof->strength = a_strength;
+    }
+
+    void SetDepthOfFieldRange(float a_range)
+    {
+        g_dofRange = a_range;
+        if (g_dof) g_dof->data.depthOfField.range = a_range;
+    }
+
     void SetAutoFocus(bool a_on)
     {
         g_autoFocus = a_on;
@@ -451,6 +570,52 @@ namespace PPM::PhotoMode
         if (!g_filter) return;
         RE::ImageSpaceModifierInstanceForm::Stop(g_filter);
         RE::ImageSpaceModifierInstanceForm::Trigger(g_filter, g_filterStrength, nullptr);
+    }
+
+    void ResetLighting()
+    {
+        if (!g_active || !RuntimeSupport::LightingAvailable()) return;
+        auto* imgs = RE::ImageSpaceManager::GetSingleton();
+        if (!imgs || !imgs->baseData || (imgs->overRideBaseData && imgs->overRideBaseData != &g_lighting)) return;
+        g_lighting = *imgs->baseData;
+        imgs->overRideBaseData = &g_lighting;
+    }
+
+    bool LightingActive() noexcept
+    {
+        if (!RuntimeSupport::LightingAvailable()) return false;
+        const auto* imgs = RE::ImageSpaceManager::GetSingleton();
+        return imgs && imgs->overRideBaseData == &g_lighting;
+    }
+
+    void SetBrightness(float a_value)
+    {
+        if (g_active && RuntimeSupport::LightingAvailable()) g_lighting.cinematicData.brightness = a_value;
+    }
+
+    void SetSaturation(float a_value)
+    {
+        if (g_active && RuntimeSupport::LightingAvailable()) g_lighting.cinematicData.saturation = a_value;
+    }
+
+    void SetContrast(float a_value)
+    {
+        if (g_active && RuntimeSupport::LightingAvailable()) g_lighting.cinematicData.contrast = a_value;
+    }
+
+    float Brightness() noexcept
+    {
+        return g_lighting.cinematicData.brightness;
+    }
+
+    float Saturation() noexcept
+    {
+        return g_lighting.cinematicData.saturation;
+    }
+
+    float Contrast() noexcept
+    {
+        return g_lighting.cinematicData.contrast;
     }
 
     void SetPickedFrozen(bool a_on)
@@ -488,10 +653,13 @@ namespace PPM::PhotoMode
         if (!RuntimeSupport::CharactersAvailable()) return;
         const auto ref = PickedRef();
         auto* actor = ref ? ref->As<RE::Actor>() : nullptr;
-        auto* idle = FindForm<RE::TESIdleForm>(a_formID);
-        if (!actor || !idle || !actor->currentProcess) return;
-        actor->currentProcess->PlayIdle(*actor, idle, nullptr);
-        g_idled = actor->GetHandle();
+        PlayIdleOn(ref ? actor : RE::PlayerCharacter::GetSingleton(), a_formID);
+    }
+
+    void PlayIdleOnPlayer(std::uint32_t a_formID)
+    {
+        if (!RuntimeSupport::CharactersAvailable()) return;
+        PlayIdleOn(RE::PlayerCharacter::GetSingleton(), a_formID);
     }
 
     void ApplyArtToPick(std::uint32_t a_formID)
@@ -510,10 +678,41 @@ namespace PPM::PhotoMode
         if (ref && shader) ref->ApplyEffectShader(shader);
     }
 
+    void SetExpressionOnPick(std::uint32_t a_formID)
+    {
+        if (!RuntimeSupport::CharactersAvailable() || !RuntimeSupport::ExpressionsAvailable()) return;
+        const auto ref = PickedRef();
+        auto* actor = ref ? ref->As<RE::Actor>() : nullptr;
+        ApplyExpressionOn(ref ? actor : RE::PlayerCharacter::GetSingleton(), a_formID);
+    }
+
+    void SetExpressionOnPlayer(std::uint32_t a_formID)
+    {
+        if (!RuntimeSupport::CharactersAvailable() || !RuntimeSupport::ExpressionsAvailable()) return;
+        ApplyExpressionOn(RE::PlayerCharacter::GetSingleton(), a_formID);
+    }
+
     const char* PickedName()
     {
         if (!RuntimeSupport::CharactersAvailable()) return nullptr;
         const auto ref = PickedRef();
         return ref ? ref->GetDisplayFullName() : nullptr;
+    }
+
+    void SetPlayerVisible(bool a_visible)
+    {
+        if (!g_active) return;
+        if (a_visible) {
+            ShowPlayer();
+            return;
+        }
+        auto* player = RE::PlayerCharacter::GetSingleton();
+        if (!player) return;
+        RE::NiAVObject* roots[] = { player->Get3D(), player->firstPerson3D.get() };
+        for (auto* root : roots) {
+            if (!root || root->GetAppCulled()) continue;
+            root->SetAppCulled(true);
+            g_playerCulled.emplace_back(root);
+        }
     }
 }

@@ -8,6 +8,7 @@
 
 #include <array>
 #include <cstdint>
+#include <cstring>
 #include <span>
 
 namespace PPM::RuntimeSupport
@@ -58,6 +59,13 @@ namespace PPM::RuntimeSupport
         constexpr REL::VariantID kApplyEffectShader{ 652173, 2205201, 2205201 };
         constexpr REL::VariantID kGetHandle{ 1573130, 2201196, 2201196 };
         constexpr REL::VariantID kGetDisplayFullName{ 1212056, 2201126, 2201126 };
+        constexpr REL::VariantID kImageSpaceManagerSingleton{ 161743, 2712627, 2712627 };
+        constexpr REL::VariantID kFreeCameraGetRotation{ 433604, 2248281, 2248281 };
+        constexpr REL::VariantID kFromEulerAnglesZXY{ 326460, 2269825, 2269825 };
+        constexpr REL::VariantID kChangeAnimFaceArchetype{ 580944, 2230434, 2230434 };
+        constexpr REL::VariantID kTypedKeywords{ 1095775, 2692038, 4799330 };
+        constexpr std::uintptr_t kFromEulerCallOffset{ 0x1B };
+        constexpr std::uint8_t kCallOpcode{ 0xE8 };
 
         const std::array kCoreMappings{
             Mapping{ "PlayerCamera::ToggleFreeCameraMode", &kToggleFreeCameraMode, Kind::Function },
@@ -111,9 +119,26 @@ namespace PPM::RuntimeSupport
             Mapping{ "TESDataHandler::Singleton", &kTESDataHandlerSingleton, Kind::Global }
         };
 
+        const std::array kLightingMappings{
+            Mapping{ "ImageSpaceManager::Singleton", &kImageSpaceManagerSingleton, Kind::Global }
+        };
+
+        const std::array kViewRollMappings{
+            Mapping{ "FreeCameraState::GetRotation", &kFreeCameraGetRotation, Kind::Function },
+            Mapping{ "NiMatrix3::FromEulerAnglesZXY", &kFromEulerAnglesZXY, Kind::Function }
+        };
+
+        const std::array kExpressionMappings{
+            Mapping{ "Actor::ChangeAnimFaceArchetype", &kChangeAnimFaceArchetype, Kind::Function },
+            Mapping{ "BGSKeyword::TypedKeywords", &kTypedKeywords, Kind::Global }
+        };
+
         bool g_depthOfFieldAvailable{ false };
         bool g_filtersAvailable{ false };
         bool g_charactersAvailable{ false };
+        bool g_lightingAvailable{ false };
+        bool g_viewRollAvailable{ false };
+        bool g_expressionsAvailable{ false };
 
         bool ResolveMappings(std::span<const Mapping> a_mappings, Family a_family)
         {
@@ -163,6 +188,26 @@ namespace PPM::RuntimeSupport
                 spdlog::info("PrismaPhotoMode: {} required mappings resolved for {} {}", a_mappings.size(), Name(a_family), executableVersion.string());
             }
             return ready;
+        }
+
+        bool FromEulerCallSiteMatches()
+        {
+            const auto site = kFreeCameraGetRotation.address() + kFromEulerCallOffset;
+            const auto* code = reinterpret_cast<const std::uint8_t*>(site);
+            if (code[0] != kCallOpcode) {
+                spdlog::error("PrismaPhotoMode: FreeCameraState::GetRotation+0x1B is not a call instruction; view roll disabled");
+                return false;
+            }
+            std::int32_t displacement{};
+            std::memcpy(&displacement, code + 1, sizeof(displacement));
+            const auto target = site + 5 + static_cast<std::uintptr_t>(static_cast<std::intptr_t>(displacement));
+            if (target != kFromEulerAnglesZXY.address()) {
+                spdlog::error(
+                    "PrismaPhotoMode: FreeCameraState::GetRotation+0x1B calls 0x{:X}, not NiMatrix3::FromEulerAnglesZXY; view roll disabled",
+                    target);
+                return false;
+            }
+            return true;
         }
     }
 
@@ -227,5 +272,46 @@ namespace PPM::RuntimeSupport
     bool CharactersAvailable() noexcept
     {
         return g_charactersAvailable;
+    }
+
+    void ValidateLightingMappings(Family a_family)
+    {
+        g_lightingAvailable = ResolveMappings(kLightingMappings, a_family);
+    }
+
+    bool LightingAvailable() noexcept
+    {
+        return g_lightingAvailable;
+    }
+
+    void ValidateViewRollMappings(Family a_family)
+    {
+        g_viewRollAvailable = ResolveMappings(kViewRollMappings, a_family) && FromEulerCallSiteMatches();
+    }
+
+    bool ViewRollAvailable() noexcept
+    {
+        return g_viewRollAvailable;
+    }
+
+    std::uintptr_t ViewRollCallSite() noexcept
+    {
+        return g_viewRollAvailable ? kFreeCameraGetRotation.address() + kFromEulerCallOffset : 0;
+    }
+
+    void ValidateExpressionMappings(Family a_family)
+    {
+        g_expressionsAvailable = ResolveMappings(kExpressionMappings, a_family);
+    }
+
+    bool ExpressionsAvailable() noexcept
+    {
+        return g_expressionsAvailable;
+    }
+
+    void ChangeAnimFaceArchetype(RE::Actor* a_actor, RE::BGSKeyword* a_keyword)
+    {
+        using Function = void (*)(RE::Actor*, RE::BGSKeyword*);
+        reinterpret_cast<Function>(kChangeAnimFaceArchetype.address())(a_actor, a_keyword);
     }
 }

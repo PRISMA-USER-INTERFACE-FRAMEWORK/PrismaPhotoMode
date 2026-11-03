@@ -94,7 +94,8 @@ body {
   right: 0;
 }
 
-#fx-overlay {
+#fx-overlay,
+#fx-texture {
   width: 100%;
   height: 100%;
   object-fit: contain;

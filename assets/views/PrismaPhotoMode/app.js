@@ -11,11 +11,16 @@
     tint: { on: false, color: "#c08040", opacity: 20 },
     grain: { on: false, amount: 35 },
     frame: { on: false, width: 40 },
-    dof: { on: false, distance: 500, auto: false },
+    dof: { on: false, distance: 500, strength: 1, range: 300, auto: false },
   };
 
+  const LAYERS = [
+    { dir: "frames", category: "frame-category", name: "frame-name", img: "fx-overlay", items: [] },
+    { dir: "textures", category: "texture-category", name: "texture-name", img: "fx-texture", items: [] },
+  ];
+
   const $ = (id) => document.getElementById(id);
-  const state = { focused: false, shooting: false, active: false, panelScaleDefault: 100, overlays: [] };
+  const state = { focused: false, shooting: false, active: false, panelScaleDefault: 100, idles: [] };
 
   function nativeCall(name, arg = "") {
     const fn = window[name];
@@ -93,8 +98,10 @@
   function resetEffects() {
     $("fx-grid-toggle").checked = DEFAULTS.grid;
     $("grid-kind").value = DEFAULTS.gridKind;
-    $("overlay-category").value = "";
-    setOverlayNames("");
+    LAYERS.forEach((layer) => {
+      $(layer.category).value = "";
+      setLayerNames(layer);
+    });
     $("fx-vignette-toggle").checked = DEFAULTS.vignette.on;
     $("vignette-strength").value = DEFAULTS.vignette.strength;
     $("fx-letterbox-toggle").checked = DEFAULTS.letterbox.on;
@@ -109,13 +116,23 @@
     $("fx-dof-toggle").checked = DEFAULTS.dof.on;
     $("dof-distance").value = DEFAULTS.dof.distance;
     $("dof-distance-out").textContent = DEFAULTS.dof.distance;
+    $("dof-strength").value = DEFAULTS.dof.strength;
+    $("dof-strength-out").textContent = Number(DEFAULTS.dof.strength).toFixed(2);
+    $("dof-range").value = DEFAULTS.dof.range;
+    $("dof-range-out").textContent = DEFAULTS.dof.range;
     $("dof-auto").checked = DEFAULTS.dof.auto;
+    $("show-player").checked = true;
+    command("showplayer|1");
     command("dof|0");
+    command(`dofdist|${DEFAULTS.dof.distance}`);
+    command(`dofstrength|${DEFAULTS.dof.strength}`);
+    command(`dofrange|${DEFAULTS.dof.range}`);
     command("autofocus|0");
     $("filter-select").value = "";
     $("filter-strength").value = 1;
     $("filter-strength-out").textContent = "1.00";
     command("filter|0");
+    command("lightreset|");
     applyEffects();
   }
 
@@ -169,6 +186,14 @@
     });
   }
 
+  const LIGHTING_CONTROLS = ["brightness", "saturation", "contrast", "lighting-reset-btn"];
+
+  function setLightingEnabled(enabled) {
+    LIGHTING_CONTROLS.forEach((id) => {
+      $(id).disabled = !enabled;
+    });
+  }
+
   function setWeatherOptions(weathers) {
     const select = $("weather-select");
     const current = select.value;
@@ -196,6 +221,12 @@
     if (typeof data.speed === "number") syncSlider("speed", "speed-out", data.speed, 2);
     if (typeof data.frozen === "boolean" && document.activeElement !== $("time-freeze")) $("time-freeze").checked = data.frozen;
     setTimeEnabled(Boolean(data.timeReady));
+    setLightingEnabled(Boolean(data.lightingReady));
+    if (typeof data.brightness === "number") syncSlider("brightness", "brightness-out", data.brightness, 2);
+    if (typeof data.saturation === "number") syncSlider("saturation", "saturation-out", data.saturation, 2);
+    if (typeof data.contrast === "number") syncSlider("contrast", "contrast-out", data.contrast, 2);
+    if (typeof data.roll === "number") syncSlider("roll", "roll-out", data.roll, 0);
+    $("roll").disabled = !data.rollReady;
     if (typeof data.timeMult === "number") syncSlider("timemult", "timemult-out", data.timeMult, 2);
     if (typeof data.timescale === "number") syncSlider("timescale", "timescale-out", data.timescale, 0);
     if (typeof data.hour === "number") {
@@ -204,37 +235,37 @@
     }
   };
 
-  function setOverlayNames(categoryName) {
-    const select = $("overlay-name");
+  function setLayerNames(layer) {
+    const select = $(layer.name);
     select.textContent = "";
     select.add(new Option("None", ""));
-    const category = state.overlays.find((entry) => entry.name === categoryName);
+    const category = layer.items.find((entry) => entry.name === $(layer.category).value);
     if (category) category.overlays.forEach((name) => select.add(new Option(name, name)));
     select.value = "";
-    applyOverlay();
+    applyLayer(layer);
   }
 
-  function setOverlayCategories(categories) {
-    const select = $("overlay-category");
+  function setLayerCategories(layer, categories) {
+    const select = $(layer.category);
     select.textContent = "";
     select.add(new Option("None", ""));
     categories.forEach((category) => select.add(new Option(category.name, category.name)));
-    state.overlays = categories;
+    layer.items = categories;
     select.value = "";
-    setOverlayNames("");
+    setLayerNames(layer);
   }
 
-  function applyOverlay() {
-    const category = $("overlay-category").value;
-    const name = $("overlay-name").value;
-    const overlay = $("fx-overlay");
+  function applyLayer(layer) {
+    const category = $(layer.category).value;
+    const name = $(layer.name).value;
+    const image = $(layer.img);
     if (!category || !name) {
-      overlay.hidden = true;
-      overlay.removeAttribute("src");
+      image.hidden = true;
+      image.removeAttribute("src");
       return;
     }
-    overlay.src = `overlays/${encodeURIComponent(category)}/${encodeURIComponent(name)}`;
-    overlay.hidden = false;
+    image.src = `overlays/${layer.dir}/${encodeURIComponent(category)}/${encodeURIComponent(name)}`;
+    image.hidden = false;
   }
 
   window.pmSetOverlays = (payload) => {
@@ -245,7 +276,7 @@
       console.error("pmSetOverlays: bad payload", error);
       return;
     }
-    setOverlayCategories(Array.isArray(data.categories) ? data.categories : []);
+    LAYERS.forEach((layer) => setLayerCategories(layer, Array.isArray(data[layer.dir]) ? data[layer.dir] : []));
   };
 
   window.pmSetLists = (payload) => {
@@ -267,6 +298,29 @@
     select.value = current;
   }
 
+  function idleCategory(item) {
+    const name = item.name || "";
+    const underscore = name.indexOf("_");
+    return underscore > 0 ? name.slice(0, underscore) : "Other";
+  }
+
+  function fillIdleCategories() {
+    const select = $("idle-category");
+    const current = select.value;
+    const names = [...new Set(state.idles.map(idleCategory))].sort();
+    select.textContent = "";
+    select.add(new Option("All", ""));
+    names.forEach((name) => select.add(new Option(name, name)));
+    select.value = names.includes(current) ? current : "";
+    fillIdleSelect();
+  }
+
+  function fillIdleSelect() {
+    const category = $("idle-category").value;
+    const items = category ? state.idles.filter((item) => idleCategory(item) === category) : state.idles;
+    fillSelect($("idle-select"), items);
+  }
+
   window.pmSetFilters = (payload) => {
     let data;
     try {
@@ -286,7 +340,9 @@
       console.error("pmSetCharacters: bad payload", error);
       return;
     }
-    fillSelect($("idle-select"), Array.isArray(data.idles) ? data.idles : []);
+    state.idles = Array.isArray(data.idles) ? data.idles : [];
+    fillIdleCategories();
+    fillSelect($("expression-select"), Array.isArray(data.expressions) ? data.expressions : []);
     fillSelect($("art-select"), Array.isArray(data.arts) ? data.arts : []);
     fillSelect($("shader-select"), Array.isArray(data.shaders) ? data.shaders : []);
   };
@@ -309,6 +365,10 @@
   $("speed").addEventListener("input", (event) => {
     $("speed-out").textContent = Number(event.target.value).toFixed(2);
     command(`speed|${event.target.value}`);
+  });
+  $("roll").addEventListener("input", (event) => {
+    $("roll-out").textContent = event.target.value;
+    command(`roll|${event.target.value}`);
   });
 
   [
@@ -341,17 +401,41 @@
     command(`timescale|${event.target.value}`);
   });
   $("weather-select").addEventListener("change", (event) => command(`weather|${event.target.value}`));
-  $("overlay-category").addEventListener("change", (event) => setOverlayNames(event.target.value));
-  $("overlay-name").addEventListener("change", applyOverlay);
+  LAYERS.forEach((layer) => {
+    $(layer.category).addEventListener("change", () => setLayerNames(layer));
+    $(layer.name).addEventListener("change", () => applyLayer(layer));
+  });
   $("filter-select").addEventListener("change", (event) => command(`filter|${event.target.value || 0}`));
   $("filter-strength").addEventListener("input", (event) => {
     $("filter-strength-out").textContent = Number(event.target.value).toFixed(2);
     command(`filterstrength|${event.target.value}`);
   });
+  $("brightness").addEventListener("input", (event) => {
+    $("brightness-out").textContent = Number(event.target.value).toFixed(2);
+    command(`brightness|${event.target.value}`);
+  });
+  $("saturation").addEventListener("input", (event) => {
+    $("saturation-out").textContent = Number(event.target.value).toFixed(2);
+    command(`saturation|${event.target.value}`);
+  });
+  $("contrast").addEventListener("input", (event) => {
+    $("contrast-out").textContent = Number(event.target.value).toFixed(2);
+    command(`contrast|${event.target.value}`);
+  });
+  $("lighting-reset-btn").addEventListener("click", () => command("lightreset|"));
   $("freeze-btn").addEventListener("click", () => command("pickfreeze|1"));
   $("release-btn").addEventListener("click", () => command("pickfreeze|0"));
+  $("show-player").addEventListener("change", (event) => command(`showplayer|${event.target.checked ? 1 : 0}`));
   $("face-btn").addEventListener("click", () => command("face|1"));
-  $("idle-btn").addEventListener("click", () => command(`idle|${$("idle-select").value || 0}`));
+  $("idle-category").addEventListener("change", fillIdleSelect);
+  $("idle-btn").addEventListener("click", () => {
+    const verb = $("idle-target").value === "player" ? "playeridle" : "idle";
+    command(`${verb}|${$("idle-select").value || 0}`);
+  });
+  $("expression-btn").addEventListener("click", () => {
+    const verb = $("expression-target").value === "player" ? "playerexpression" : "expression";
+    command(`${verb}|${$("expression-select").value || 0}`);
+  });
   $("art-btn").addEventListener("click", () => command(`art|${$("art-select").value || 0}`));
   $("shader-btn").addEventListener("click", () => command(`shader|${$("shader-select").value || 0}`));
   $("weather-clear-btn").addEventListener("click", () => {
@@ -479,6 +563,14 @@
   $("dof-distance").addEventListener("input", (event) => {
     $("dof-distance-out").textContent = event.target.value;
     command(`dofdist|${event.target.value}`);
+  });
+  $("dof-strength").addEventListener("input", (event) => {
+    $("dof-strength-out").textContent = Number(event.target.value).toFixed(2);
+    command(`dofstrength|${event.target.value}`);
+  });
+  $("dof-range").addEventListener("input", (event) => {
+    $("dof-range-out").textContent = event.target.value;
+    command(`dofrange|${event.target.value}`);
   });
   $("dof-auto").addEventListener("change", (event) => command(`autofocus|${event.target.checked ? 1 : 0}`));
   setInterval(() => {

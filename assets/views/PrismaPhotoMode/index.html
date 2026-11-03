@@ -15,6 +15,7 @@
   <div id="fx-letterbox-bottom" class="fx bar" hidden></div>
   <div id="fx-letterbox-left" class="fx bar" hidden></div>
   <div id="fx-letterbox-right" class="fx bar" hidden></div>
+  <img id="fx-texture" class="fx" alt="" hidden>
   <img id="fx-overlay" class="fx" alt="" hidden>
   <div id="fx-grid" class="fx" hidden data-kind="thirds">
     <span class="line t v v1"></span><span class="line t v v2"></span><span class="line t h h1"></span><span class="line t h h2"></span>
@@ -45,6 +46,9 @@
         <h2>Camera</h2>
         <label>Field of view <output id="fov-out">75</output>
           <input id="fov" type="range" min="5" max="150" step="1" value="75">
+        </label>
+        <label>View roll <output id="roll-out">0</output>&deg;
+          <input id="roll" type="range" min="-90" max="90" step="1" value="0">
         </label>
         <label>Camera speed <output id="speed-out">1.00</output>
           <input id="speed" type="range" min="0.1" max="50" step="0.1" value="1">
@@ -108,6 +112,12 @@
           <label>Focus distance <output id="dof-distance-out">500</output>
             <input id="dof-distance" type="range" min="50" max="5000" step="10" value="500">
           </label>
+          <label>Strength <output id="dof-strength-out">1.00</output>
+            <input id="dof-strength" type="range" min="0" max="1" step="0.05" value="1">
+          </label>
+          <label>Range <output id="dof-range-out">300</output>
+            <input id="dof-range" type="range" min="0" max="5000" step="10" value="300">
+          </label>
           <label><input id="dof-auto" type="checkbox"> Auto focus on picked ref</label>
         </fieldset>
         <button id="reset-effects-btn" type="button">Reset effects</button>
@@ -138,12 +148,21 @@
 
     <div data-tab-panel="overlays" hidden>
       <section>
-        <h2>Overlays</h2>
+        <h2>Frames</h2>
         <label>Category
-          <select id="overlay-category"><option value="">None</option></select>
+          <select id="frame-category"><option value="">None</option></select>
         </label>
-        <label>Overlay
-          <select id="overlay-name"><option value="">None</option></select>
+        <label>Frame
+          <select id="frame-name"><option value="">None</option></select>
+        </label>
+      </section>
+      <section>
+        <h2>Textures</h2>
+        <label>Category
+          <select id="texture-category"><option value="">None</option></select>
+        </label>
+        <label>Texture
+          <select id="texture-name"><option value="">None</option></select>
         </label>
       </section>
     </div>
@@ -158,21 +177,50 @@
           <input id="filter-strength" type="range" min="0" max="1" step="0.05" value="1">
         </label>
       </section>
+      <section>
+        <h2>Lighting</h2>
+        <label>Brightness <output id="brightness-out">1.00</output>
+          <input id="brightness" type="range" min="0" max="3" step="0.05" value="1">
+        </label>
+        <label>Saturation <output id="saturation-out">1.00</output>
+          <input id="saturation" type="range" min="0" max="3" step="0.05" value="1">
+        </label>
+        <label>Contrast <output id="contrast-out">1.00</output>
+          <input id="contrast" type="range" min="0" max="3" step="0.05" value="1">
+        </label>
+        <button id="lighting-reset-btn" type="button">Reset lighting</button>
+      </section>
     </div>
 
     <div data-tab-panel="characters" hidden>
       <section>
         <h2>Characters</h2>
+        <fieldset>
+          <label><input id="show-player" type="checkbox" checked> Show player</label>
+        </fieldset>
         <p>Picked: <span id="pick-name">No reference picked</span></p>
         <fieldset>
           <button id="freeze-btn" type="button">Freeze</button>
           <button id="release-btn" type="button">Release</button>
           <button id="face-btn" type="button">Face camera</button>
         </fieldset>
+        <label>Idle target
+          <select id="idle-target"><option value="picked">Picked (player if none)</option><option value="player">Player</option></select>
+        </label>
+        <label>Idle category
+          <select id="idle-category"><option value="">All</option></select>
+        </label>
         <label>Idle
           <select id="idle-select"><option value="">None</option></select>
         </label>
         <button id="idle-btn" type="button">Play idle</button>
+        <label>Expression target
+          <select id="expression-target"><option value="picked">Picked (player if none)</option><option value="player">Player</option></select>
+        </label>
+        <label>Expression
+          <select id="expression-select"><option value="">None</option></select>
+        </label>
+        <button id="expression-btn" type="button">Apply expression</button>
         <label>Art object
           <select id="art-select"><option value="">None</option></select>
         </label>

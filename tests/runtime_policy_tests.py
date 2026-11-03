@@ -65,6 +65,11 @@ for name in (
     "TESObjectREFR::ApplyEffectShader",
     "TESObjectREFR::GetHandle",
     "TESObjectREFR::GetDisplayFullName",
+    "ImageSpaceManager::Singleton",
+    "FreeCameraState::GetRotation",
+    "NiMatrix3::FromEulerAnglesZXY",
+    "Actor::ChangeAnimFaceArchetype",
+    "BGSKeyword::TypedKeywords",
 ):
     assert f'"{name}"' in runtime, f"RuntimeSupport.cpp must validate {name}"
 
@@ -109,6 +114,11 @@ for triple in (
     "652173, 2205201, 2205201",
     "1573130, 2201196, 2201196",
     "1212056, 2201126, 2201126",
+    "161743, 2712627, 2712627",
+    "433604, 2248281, 2248281",
+    "326460, 2269825, 2269825",
+    "580944, 2230434, 2230434",
+    "1095775, 2692038, 4799330",
 ):
     assert re.search(rf"REL::VariantID k\w+\{{ {re.escape(triple)} \}}", runtime), f"RuntimeSupport.cpp must carry the verified NG id triple {triple}"
 
@@ -140,6 +150,9 @@ FUNCTION_MAPPINGS = (
     "TESObjectREFR::ApplyEffectShader",
     "TESObjectREFR::GetHandle",
     "TESObjectREFR::GetDisplayFullName",
+    "FreeCameraState::GetRotation",
+    "NiMatrix3::FromEulerAnglesZXY",
+    "Actor::ChangeAnimFaceArchetype",
 )
 GLOBAL_MAPPINGS = (
     "Main::Singleton",
@@ -151,6 +164,8 @@ GLOBAL_MAPPINGS = (
     "TESDataHandler::Singleton",
     "Console::GetCurrentPickIndex",
     "Console::GetPickRefs",
+    "ImageSpaceManager::Singleton",
+    "BGSKeyword::TypedKeywords",
 )
 mapping_kinds = re.findall(r'Mapping\{ "([^"]+)", &\w+, Kind::(Function|Global) \}', runtime)
 assert mapping_kinds, "RuntimeSupport.cpp must declare Mapping entries with a Kind"
@@ -169,5 +184,10 @@ assert "ValidateTimeMappings(g_runtimeFamily)" in main, "main.cpp must gate the 
 assert "ValidateDepthOfFieldMappings(g_runtimeFamily)" in main, "main.cpp must gate depth of field through ValidateDepthOfFieldMappings"
 assert "ValidateFilterMappings(g_runtimeFamily)" in main, "main.cpp must gate filters through ValidateFilterMappings"
 assert "ValidateCharacterMappings(g_runtimeFamily)" in main, "main.cpp must gate characters through ValidateCharacterMappings"
+assert "ValidateLightingMappings(g_runtimeFamily)" in main, "main.cpp must gate lighting through ValidateLightingMappings"
+assert "ValidateViewRollMappings(g_runtimeFamily)" in main, "main.cpp must gate the view roll through ValidateViewRollMappings"
+assert "InstallViewRoll()" in main, "main.cpp must install the view roll hook at kGameDataReady"
+assert "ValidateExpressionMappings(g_runtimeFamily)" in main, "main.cpp must gate expressions through ValidateExpressionMappings"
+assert "REL::GetTrampoline().write_call<5>" in (src / "PhotoMode.cpp").read_text(encoding="utf-8"), "view roll must patch a 5-byte call through the trampoline"
 
 print("PrismaPhotoMode runtime and PrismaUI policy tests passed")

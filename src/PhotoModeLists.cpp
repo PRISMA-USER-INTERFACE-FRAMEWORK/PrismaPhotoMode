@@ -1,6 +1,8 @@
 #include "PhotoModeLists.h"
+#include "RuntimeSupport.h"
 
 #include <RE/B/BGSArtObject.h>
+#include <RE/B/BGSKeyword.h>
 #include <RE/T/TESDataHandler.h>
 #include <RE/T/TESEffectShader.h>
 #include <RE/T/TESIdleForm.h>
@@ -42,10 +44,30 @@ namespace PPM::PhotoModeLists
             return extension == ".png";
         }
 
+        using Entries = std::vector<std::pair<std::string, std::uint32_t>>;
+
+        std::string EntriesJson(Entries a_entries)
+        {
+            std::ranges::sort(a_entries);
+            if (a_entries.size() > kMaxFormEntries) a_entries.resize(kMaxFormEntries);
+
+            std::string json{ "[" };
+            bool first = true;
+            for (const auto& [name, id] : a_entries) {
+                if (!first) json += ',';
+                first = false;
+                json += std::format(R"({{"id":{},"name":")", id);
+                AppendEscaped(json, name);
+                json += "\"}";
+            }
+            json += ']';
+            return json;
+        }
+
         template <class T>
         std::string FormArray()
         {
-            std::vector<std::pair<std::string, std::uint32_t>> entries;
+            Entries entries;
             if (auto* handler = RE::TESDataHandler::GetSingleton()) {
                 for (auto* form : handler->GetFormArray<T>()) {
                     if (!form) continue;
@@ -53,17 +75,58 @@ namespace PPM::PhotoModeLists
                     entries.emplace_back(editorId && *editorId ? std::string{ editorId } : std::format("{:08X}", form->GetFormID()), form->GetFormID());
                 }
             }
-            std::ranges::sort(entries);
-            if (entries.size() > kMaxFormEntries) entries.resize(kMaxFormEntries);
+            return EntriesJson(std::move(entries));
+        }
+
+        std::string ExpressionArray()
+        {
+            constexpr std::string_view kPrefix{ "AnimFaceArchetype" };
+            Entries entries;
+            if (RuntimeSupport::ExpressionsAvailable()) {
+                if (const auto keywords = RE::BGSKeyword::GetTypedKeywords()) {
+                    for (auto* keyword : (*keywords)[std::to_underlying(RE::KeywordType::kAnimFaceArchetype)]) {
+                        if (!keyword) continue;
+                        const char* editorId = keyword->GetFormEditorID();
+                        std::string name = editorId && *editorId ? std::string{ editorId } : std::format("{:08X}", keyword->GetFormID());
+                        if (name.starts_with(kPrefix) && name.size() > kPrefix.size()) name.erase(0, kPrefix.size());
+                        entries.emplace_back(std::move(name), keyword->GetFormID());
+                    }
+                }
+            }
+            return EntriesJson(std::move(entries));
+        }
+
+        std::string OverlayCategories(const std::filesystem::path& a_root)
+        {
+            namespace fs = std::filesystem;
+            std::error_code ec;
+            std::vector<fs::path> categories;
+            for (const auto& entry : fs::directory_iterator(a_root, ec)) {
+                if (entry.is_directory(ec)) categories.push_back(entry.path());
+            }
+            std::ranges::sort(categories);
 
             std::string json{ "[" };
-            bool first = true;
-            for (const auto& [name, id] : entries) {
-                if (!first) json += ',';
-                first = false;
-                json += std::format(R"({{"id":{},"name":")", id);
-                AppendEscaped(json, name);
-                json += "\"}";
+            bool firstCategory = true;
+            for (const auto& category : categories) {
+                std::vector<std::string> names;
+                for (const auto& entry : fs::directory_iterator(category, ec)) {
+                    if (entry.is_regular_file(ec) && IsPng(entry.path())) names.push_back(entry.path().filename().string());
+                }
+                std::ranges::sort(names);
+
+                if (!firstCategory) json += ',';
+                firstCategory = false;
+                json += R"({"name":")";
+                AppendEscaped(json, category.filename().string());
+                json += R"(","overlays":[)";
+                for (std::size_t i = 0; i < names.size(); ++i) {
+                    if (i) json += ',';
+                    json += '"';
+                    AppendEscaped(json, names[i]);
+                    json += '"';
+                }
+                json += "]}";
             }
             json += ']';
             return json;
@@ -82,7 +145,7 @@ namespace PPM::PhotoModeLists
 
     std::string BuildCharacterForms()
     {
-        return std::string{ R"({"idles":)" } + FormArray<RE::TESIdleForm>() + R"(,"arts":)" + FormArray<RE::BGSArtObject>() + R"(,"shaders":)" + FormArray<RE::TESEffectShader>() + "}";
+        return std::string{ R"({"idles":)" } + FormArray<RE::TESIdleForm>() + R"(,"arts":)" + FormArray<RE::BGSArtObject>() + R"(,"shaders":)" + FormArray<RE::TESEffectShader>() + R"(,"expressions":)" + ExpressionArray() + "}";
     }
 
     std::string BuildPick(const char* a_name)
@@ -94,37 +157,7 @@ namespace PPM::PhotoModeLists
 
     std::string BuildOverlays()
     {
-        namespace fs = std::filesystem;
-        std::error_code ec;
-        std::vector<fs::path> categories;
-        for (const auto& entry : fs::directory_iterator(kOverlayRoot, ec)) {
-            if (entry.is_directory(ec)) categories.push_back(entry.path());
-        }
-        std::ranges::sort(categories);
-
-        std::string json{ R"({"categories":[)" };
-        bool firstCategory = true;
-        for (const auto& category : categories) {
-            std::vector<std::string> names;
-            for (const auto& entry : fs::directory_iterator(category, ec)) {
-                if (entry.is_regular_file(ec) && IsPng(entry.path())) names.push_back(entry.path().filename().string());
-            }
-            std::ranges::sort(names);
-
-            if (!firstCategory) json += ',';
-            firstCategory = false;
-            json += R"({"name":")";
-            AppendEscaped(json, category.filename().string());
-            json += R"(","overlays":[)";
-            for (std::size_t i = 0; i < names.size(); ++i) {
-                if (i) json += ',';
-                json += '"';
-                AppendEscaped(json, names[i]);
-                json += '"';
-            }
-            json += "]}";
-        }
-        json += "]}";
-        return json;
+        const std::filesystem::path root{ kOverlayRoot };
+        return std::string{ R"({"frames":)" } + OverlayCategories(root / "frames") + R"(,"textures":)" + OverlayCategories(root / "textures") + "}";
     }
 }
