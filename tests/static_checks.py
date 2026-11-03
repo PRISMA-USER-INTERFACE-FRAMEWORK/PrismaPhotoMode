@@ -14,7 +14,7 @@ REQUIRED_IDS = (
     "fx-grain-toggle", "grain-amount", "fx-frame-toggle", "frame-width",
     "fx-grid", "fx-vignette", "fx-tint", "fx-grain", "fx-frame",
     "fx-letterbox-top", "fx-letterbox-bottom", "fx-letterbox-left", "fx-letterbox-right",
-    "grid-kind", "time-freeze", "timemult", "timemult-out", "hour", "hour-out", "timescale", "timescale-out",
+    "overlay-category", "overlay-name", "fx-overlay", "grid-kind", "time-freeze", "timemult", "timemult-out", "hour", "hour-out", "timescale", "timescale-out",
     "weather-select", "weather-clear-btn",
 )
 NATIVE_COMMANDS = ("fov", "speed", "focus", "screenshot", "reset", "exit", "freeze", "timemult", "hour", "timescale", "weather", "lists")
@@ -54,6 +54,8 @@ def check(root: Path) -> None:
     style = (views / "style.css").read_text(encoding="utf-8")
     if "window.pmSetState" not in app:
         raise SystemExit("app.js must expose window.pmSetState")
+    if "window.pmSetOverlays" not in app:
+        raise SystemExit("app.js must expose window.pmSetOverlays")
     if "window.pmSetLists" not in app:
         raise SystemExit("app.js must expose window.pmSetLists")
     if '"pm_command"' not in app:

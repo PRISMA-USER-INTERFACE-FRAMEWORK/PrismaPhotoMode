@@ -93,6 +93,12 @@ body {
   right: 0;
 }
 
+#fx-overlay {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 #fx-grid .line {
   position: absolute;
   display: none;

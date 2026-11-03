@@ -38,6 +38,7 @@ namespace
     constexpr char kCommandListener[] = "pm_command";
     constexpr char kStateCallback[] = "pmSetState";
     constexpr char kListsCallback[] = "pmSetLists";
+    constexpr char kOverlaysCallback[] = "pmSetOverlays";
     constexpr float kMinFOV = 5.0F;
     constexpr float kMaxFOV = 150.0F;
     constexpr float kMinSpeed = 0.1F;
@@ -106,6 +107,13 @@ namespace
         g_api->InteropCall(g_view, kListsCallback, json.c_str());
     }
 
+    void PushOverlays()
+    {
+        if (!ViewReady()) return;
+        const auto json = PPM::PhotoModeLists::BuildOverlays();
+        g_api->InteropCall(g_view, kOverlaysCallback, json.c_str());
+    }
+
     void SetFocus(bool a_focus)
     {
         if (!ViewReady()) return;
@@ -123,6 +131,7 @@ namespace
         g_api->Show(g_view);
         PushState();
         PushLists();
+        PushOverlays();
     }
 
     void ExitMode()
@@ -204,6 +213,7 @@ namespace
         g_domReady = true;
         PushState();
         PushLists();
+        PushOverlays();
     }
 
     class PhotoModeInput final : public RE::BSInputEventUser

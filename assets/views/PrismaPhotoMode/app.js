@@ -14,7 +14,7 @@
   };
 
   const $ = (id) => document.getElementById(id);
-  const state = { focused: false, shooting: false };
+  const state = { focused: false, shooting: false, overlays: [] };
 
   function nativeCall(name, arg = "") {
     const fn = window[name];
@@ -94,6 +94,8 @@
   function resetEffects() {
     $("fx-grid-toggle").checked = DEFAULTS.grid;
     $("grid-kind").value = DEFAULTS.gridKind;
+    $("overlay-category").value = "";
+    setOverlayNames("");
     $("fx-vignette-toggle").checked = DEFAULTS.vignette.on;
     $("vignette-strength").value = DEFAULTS.vignette.strength;
     $("fx-letterbox-toggle").checked = DEFAULTS.letterbox.on;
@@ -182,6 +184,50 @@
     }
   };
 
+  function setOverlayNames(categoryName) {
+    const select = $("overlay-name");
+    select.textContent = "";
+    select.add(new Option("None", ""));
+    const category = state.overlays.find((entry) => entry.name === categoryName);
+    if (category) category.overlays.forEach((name) => select.add(new Option(name, name)));
+    select.value = "";
+    applyOverlay();
+  }
+
+  function setOverlayCategories(categories) {
+    const select = $("overlay-category");
+    select.textContent = "";
+    select.add(new Option("None", ""));
+    categories.forEach((category) => select.add(new Option(category.name, category.name)));
+    state.overlays = categories;
+    select.value = "";
+    setOverlayNames("");
+  }
+
+  function applyOverlay() {
+    const category = $("overlay-category").value;
+    const name = $("overlay-name").value;
+    const overlay = $("fx-overlay");
+    if (!category || !name) {
+      overlay.hidden = true;
+      overlay.removeAttribute("src");
+      return;
+    }
+    overlay.src = `overlays/${encodeURIComponent(category)}/${encodeURIComponent(name)}`;
+    overlay.hidden = false;
+  }
+
+  window.pmSetOverlays = (payload) => {
+    let data;
+    try {
+      data = JSON.parse(payload);
+    } catch (error) {
+      console.error("pmSetOverlays: bad payload", error);
+      return;
+    }
+    setOverlayCategories(Array.isArray(data.categories) ? data.categories : []);
+  };
+
   window.pmSetLists = (payload) => {
     let data;
     try {
@@ -232,6 +278,8 @@
     command(`timescale|${event.target.value}`);
   });
   $("weather-select").addEventListener("change", (event) => command(`weather|${event.target.value}`));
+  $("overlay-category").addEventListener("change", (event) => setOverlayNames(event.target.value));
+  $("overlay-name").addEventListener("change", applyOverlay);
   $("weather-clear-btn").addEventListener("click", () => {
     $("weather-select").value = "";
     command("weather|0");

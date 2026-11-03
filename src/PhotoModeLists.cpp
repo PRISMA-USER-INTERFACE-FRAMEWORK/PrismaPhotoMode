@@ -3,13 +3,18 @@
 #include <RE/T/TESDataHandler.h>
 #include <RE/T/TESWeather.h>
 
+#include <algorithm>
+#include <filesystem>
 #include <format>
 #include <string_view>
+#include <vector>
 
 namespace PPM::PhotoModeLists
 {
     namespace
     {
+        constexpr char kOverlayRoot[] = "Data/PrismaUI_F4/views/PrismaPhotoMode/overlays";
+
         void AppendEscaped(std::string& a_json, std::string_view a_text)
         {
             for (const char c : a_text) {
@@ -47,5 +52,41 @@ namespace PPM::PhotoModeLists
     std::string Build()
     {
         return std::string{ R"({"weathers":)" } + FormArray<RE::TESWeather>() + "}";
+    }
+
+    std::string BuildOverlays()
+    {
+        namespace fs = std::filesystem;
+        std::error_code ec;
+        std::vector<fs::path> categories;
+        for (const auto& entry : fs::directory_iterator(kOverlayRoot, ec)) {
+            if (entry.is_directory(ec)) categories.push_back(entry.path());
+        }
+        std::ranges::sort(categories);
+
+        std::string json{ R"({"categories":[)" };
+        bool firstCategory = true;
+        for (const auto& category : categories) {
+            std::vector<std::string> names;
+            for (const auto& entry : fs::directory_iterator(category, ec)) {
+                if (entry.is_regular_file(ec) && entry.path().extension().string() == ".png") names.push_back(entry.path().filename().string());
+            }
+            std::ranges::sort(names);
+
+            if (!firstCategory) json += ',';
+            firstCategory = false;
+            json += R"({"name":")";
+            AppendEscaped(json, category.filename().string());
+            json += R"(","overlays":[)";
+            for (std::size_t i = 0; i < names.size(); ++i) {
+                if (i) json += ',';
+                json += '"';
+                AppendEscaped(json, names[i]);
+                json += '"';
+            }
+            json += "]}";
+        }
+        json += "]}";
+        return json;
     }
 }
