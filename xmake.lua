@@ -21,7 +21,7 @@ end
 includes(commonlib_path)
 
 set_project("PrismaPhotoMode")
-set_version("1.0.0")
+set_version("1.1.0")
 set_languages("c++23")
 set_warnings("allextra")
 set_encodings("utf-8")

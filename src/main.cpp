@@ -562,7 +562,7 @@ namespace
 
 F4SE_PLUGIN_VERSION = []() noexcept {
     F4SE::PluginVersionData v{};
-    v.PluginVersion({ 1, 0, 0, 0 });
+    v.PluginVersion({ 1, 1, 0, 0 });
     v.PluginName(kPluginName);
     v.AuthorName("NomadsReach");
     v.UsesAddressLibraryNG(true);

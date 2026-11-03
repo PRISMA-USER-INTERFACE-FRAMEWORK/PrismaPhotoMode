@@ -15,6 +15,7 @@ with tempfile.TemporaryDirectory(prefix="prisma-photo-mode-ci-") as tmp:
     cases = (
         ("duplicate id", original + b'<div id="panel"></div>', "duplicate DOM ids"),
         ("missing control", original.replace(b'id="screenshot-btn"', b'id="missingShot"'), "missing static control"),
+        ("escaping asset", original + b'<script src="../../../src/main.cpp"></script>', "asset escapes view directory"),
     )
     for name, blob, marker in cases:
         index.write_bytes(blob)

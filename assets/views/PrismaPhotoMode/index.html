@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PrismaPhotoMode</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <div id="fx-vignette" class="fx" hidden></div>
@@ -28,12 +28,13 @@
 
   <main id="panel">
     <header>
-      <h1>Photo mode</h1>
+      <div class="identity"><span class="eyebrow">PRISMA <span>//</span> CAMERA SYSTEM</span><h1>Photo mode</h1></div>
       <span id="focus-state">Camera</span>
     </header>
 
     <nav class="tabs" aria-label="Photo mode tabs">
       <button type="button" class="tab" data-tab="camera" aria-selected="true">Camera</button>
+      <button type="button" class="tab" data-tab="effects" aria-selected="false">Effects</button>
       <button type="button" class="tab" data-tab="time" aria-selected="false">Time</button>
       <button type="button" class="tab" data-tab="overlays" aria-selected="false">Overlays</button>
       <button type="button" class="tab" data-tab="filters" aria-selected="false">Filters</button>
@@ -41,6 +42,7 @@
       <button type="button" class="tab" data-tab="access" aria-selected="false">Access</button>
     </nav>
 
+    <div class="panel-content">
     <div data-tab-panel="camera">
       <section>
         <h2>Camera</h2>
@@ -55,8 +57,10 @@
         </label>
         <button id="focus-btn" type="button">Take mouse</button>
       </section>
+    </div>
 
-      <section>
+    <div data-tab-panel="effects" hidden>
+      <section class="effects-grid">
         <h2>Effects</h2>
         <fieldset>
           <label><input id="fx-grid-toggle" type="checkbox"> Grid</label>
@@ -242,16 +246,17 @@
         <p>Gamepad: D-pad moves, A activates, LB and RB switch tabs, B releases the panel.</p>
       </section>
     </div>
+    </div>
 
-    <section>
-      <h2>Capture</h2>
+    <section class="capture-actions" aria-label="Capture controls">
       <button id="hide-panel-btn" type="button">Hide panel</button>
-      <button id="screenshot-btn" type="button">Take screenshot</button>
+      <button id="screenshot-btn" type="button">Take photo</button>
       <button id="reset-btn" type="button">Reset camera</button>
       <button id="exit-btn" type="button">Exit photo mode</button>
     </section>
+    <div class="control-hint" aria-hidden="true"><span>↑ ↓ &nbsp; NAVIGATE</span><span>← → &nbsp; ADJUST</span><span>LB / RB &nbsp; TABS</span></div>
   </main>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

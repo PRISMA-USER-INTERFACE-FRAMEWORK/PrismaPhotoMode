@@ -5,6 +5,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 import re
 import sys
+from urllib.parse import urlsplit
 
 REQUIRED_IDS = (
     "fov", "speed", "focus-btn", "focus-state", "panel", "show-panel",
@@ -49,7 +50,10 @@ def check(root: Path) -> None:
     if duplicates:
         raise SystemExit(f"index.html duplicate DOM ids: {', '.join(duplicates)}")
     for ref in collector.hrefs:
-        if not (views / ref).is_file():
+        target = (views / urlsplit(ref).path).resolve()
+        if not target.is_relative_to(views.resolve()):
+            raise SystemExit(f"index.html asset escapes view directory: {ref}")
+        if not target.is_file():
             raise SystemExit(f"index.html missing asset reference: {ref}")
     for control in REQUIRED_IDS:
         if f'id="{control}"' not in html:

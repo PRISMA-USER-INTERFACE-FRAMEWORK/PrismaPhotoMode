@@ -143,9 +143,12 @@
   }
 
   function applyPanelScale(percent) {
+    const scale = Math.max(0.1, Math.min(percent / 100, (window.innerWidth - 48) / 280, (window.innerHeight - 48) / 450));
     $("panel-scale").value = percent;
-    $("panel-scale-out").textContent = percent;
-    document.documentElement.style.setProperty("--panel-scale", String(percent / 100));
+    $("panel-scale-out").textContent = scale < percent / 100 ? `${percent} (fit ${Math.round(scale * 100)})` : percent;
+    document.documentElement.style.setProperty("--panel-scale", String(scale));
+    document.documentElement.style.setProperty("--panel-max-height", `${Math.max(0, window.innerHeight - 48) / scale}px`);
+    document.documentElement.style.setProperty("--panel-max-width", `${Math.max(0, window.innerWidth - 48) / scale}px`);
   }
 
   function toggleFocus() {
@@ -580,7 +583,11 @@
 
   $("panel-scale").addEventListener("input", (event) => applyPanelScale(Number(event.target.value)));
 
-  window.addEventListener("resize", applyLetterbox);
+  window.addEventListener("resize", () => {
+    applyLetterbox();
+    applyPanelScale(Number($("panel-scale").value) || state.panelScaleDefault);
+  });
   resetEffects();
+  applyPanelScale(state.panelScaleDefault);
   pollGamepad();
 })();

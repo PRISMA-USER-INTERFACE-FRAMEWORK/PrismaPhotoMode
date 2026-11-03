@@ -14,13 +14,14 @@ function element(id) {
   }
   return elements.get(id);
 }
+const properties = new Map();
 const document = {
   getElementById: element,
   querySelectorAll() { return []; },
-  documentElement: { style: { setProperty() {} } },
+  documentElement: { style: { setProperty(name, value) { properties.set(name, value); } } },
   addEventListener() {},
 };
-const window = { innerWidth: 1920, innerHeight: 1080, addEventListener() {}, requestAnimationFrame() {} };
+const window = { innerWidth: 1920, innerHeight: 1080, addEventListener(event, callback) { this[event] = callback; }, requestAnimationFrame() {} };
 const navigator = { getGamepads() { return []; } };
 class Option {}
 vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../assets/views/PrismaPhotoMode/app.js"), "utf8"), { document, window, navigator, Option, setInterval() {} });
@@ -44,4 +45,13 @@ assert.equal(element("fx-letterbox-top").hidden, true);
 element("fx-letterbox-toggle").checked = false;
 element("fx-letterbox-toggle").input();
 assert.equal(element("fx-letterbox-left").hidden, true);
+element("panel-scale").input({ target: { value: "200" } });
+assert.equal(properties.get("--panel-max-height"), "516px");
+assert.equal(properties.get("--panel-max-width"), "936px");
+window.innerHeight = 768;
+window.innerWidth = 320;
+window.resize();
+assert.equal(properties.get("--panel-max-width"), "280px");
+assert.ok(Number(properties.get("--panel-scale")) < 1);
+assert.match(element("panel-scale-out").textContent, /fit/);
 console.log("PrismaPhotoMode letterbox checks PASS");
