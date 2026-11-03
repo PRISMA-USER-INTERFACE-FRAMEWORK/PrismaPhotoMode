@@ -39,7 +39,10 @@ if stage == "checks":
     if not node:
         raise SystemExit("Node.js is required for the app.js syntax check")
     subprocess.run([node, "--check", str(root / "assets/views/PrismaPhotoMode/app.js")], check=True)
+    subprocess.run([node, "--check", str(root / "assets/views/PrismaPhotoMode/preview.js")], check=True)
     subprocess.run([node, str(root / "tests/letterbox.test.js")], check=True)
+    subprocess.run([node, str(root / "tests/ui_polling.test.js")], check=True)
+    subprocess.run([node, str(root / "tests/preview.test.js")], check=True)
     subprocess.run([sys.executable, "-X", "utf8", "tests/run_checks.py"], cwd=root, env=env, check=True)
     subprocess.run([sys.executable, "-X", "utf8", "tests/test_ci_guards.py"], cwd=root, env=env, check=True)
     print("PrismaPhotoMode asset and runtime policy checks PASS")
@@ -54,6 +57,12 @@ elif stage == "dll":
         args.append("--sdk=" + env["CLANGCL_SDK"])
     subprocess.run(args, cwd=root, env=env, check=True)
     subprocess.run(["xmake", "build", "-y", "PrismaPhotoMode"], cwd=root, env=env, check=True)
+    subprocess.run(["xmake", "build", "-y", "ScreenshotBlendTest"], cwd=root, env=env, check=True)
+    subprocess.run([str(root / "build-clang/windows/x64/release/ScreenshotBlendTest.exe")], cwd=root, env=env, check=True)
+    subprocess.run(["xmake", "build", "-y", "ScreenshotHookTest"], cwd=root, env=env, check=True)
+    subprocess.run([str(root / "build-clang/windows/x64/release/ScreenshotHookTest.exe")], cwd=root, env=env, check=True)
+    subprocess.run(["xmake", "build", "-y", "ScreenshotImageTest"], cwd=root, env=env, check=True)
+    subprocess.run([str(root / "build-clang/windows/x64/release/ScreenshotImageTest.exe")], cwd=root, env=env, check=True)
     dll = root / "build-clang/windows/x64/release/PrismaPhotoMode.dll"
     if not dll.is_file():
         raise SystemExit(f"Native build did not produce {dll}")

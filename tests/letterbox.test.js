@@ -23,7 +23,7 @@ const document = {
 };
 const window = { innerWidth: 1920, innerHeight: 1080, addEventListener(event, callback) { this[event] = callback; }, requestAnimationFrame() {} };
 const navigator = { getGamepads() { return []; } };
-class Option {}
+class Option { constructor(text, value) { this.text = text; this.value = value; } }
 vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../assets/views/PrismaPhotoMode/app.js"), "utf8"), { document, window, navigator, Option, setInterval() {} });
 
 element("fx-letterbox-toggle").checked = true;
@@ -54,4 +54,13 @@ window.resize();
 assert.equal(properties.get("--panel-max-width"), "280px");
 assert.ok(Number(properties.get("--panel-scale")) < 1);
 assert.match(element("panel-scale-out").textContent, /fit/);
-console.log("PrismaPhotoMode letterbox checks PASS");
+const options = [];
+element("frame-name").add = (option) => options.push(option);
+window.pmSetOverlays(JSON.stringify({ frames: [{ name: "Fallout", overlays: ["greetings_from_the_commonwealth.png", "vault_111.PNG"] }], textures: [] }));
+element("frame-category").value = "Fallout";
+element("frame-category").change();
+assert.deepEqual(options.slice(-2).map(({ text, value }) => [text, value]), [
+  ["Greetings From The Commonwealth", "greetings_from_the_commonwealth.png"],
+  ["Vault 111", "vault_111.PNG"],
+]);
+console.log("PrismaPhotoMode letterbox and frame checks PASS");

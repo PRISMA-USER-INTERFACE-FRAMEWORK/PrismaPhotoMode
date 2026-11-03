@@ -24,7 +24,7 @@ Download the `PrismaPhotoMode` CI artifact from a successful run and extract `Pr
 - The Characters tab acts on the console-picked reference: freeze and release, face the camera, play an idle, and apply an art object or effect shader. Idle target is Picked (the player when nothing is picked) or Player, and the idle list can be filtered by category (the editor ID prefix before the first underscore, or Other). The Expression list applies an AnimFaceArchetype keyword to the same target. Only one actor keeps an expression at a time; choosing None, choosing another actor, or exiting photo mode clears it. Not verified in game.
 - Show player hides the player model while photo mode is open. It is shown again when photo mode closes. Not verified in game.
 - Visual effects are CSS overlays in the panel view: vignette, letterbox with an aspect picker, colour tint, film grain, frame, and a rule-of-thirds grid.
-- The screenshot action hides the panel and grid and keeps the overlays. Whether the engine screenshot captures the web overlays is not verified in game.
+- The screenshot action hides the panel and grid. When a frame is selected, photo mode blends it into the game image and writes a PNG under `Documents/My Games/Fallout4/Photos`; if framed capture fails, the game screenshot is used instead. Other web overlays are not included in the framed capture.
 
 ## Controls
 

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PrismaPhotoMode</title>
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
   <div id="fx-vignette" class="fx" hidden></div>
@@ -33,28 +33,22 @@
     </header>
 
     <nav class="tabs" aria-label="Photo mode tabs">
-      <button type="button" class="tab" data-tab="camera" aria-selected="true">Camera</button>
-      <button type="button" class="tab" data-tab="effects" aria-selected="false">Effects</button>
-      <button type="button" class="tab" data-tab="time" aria-selected="false">Time</button>
-      <button type="button" class="tab" data-tab="overlays" aria-selected="false">Overlays</button>
-      <button type="button" class="tab" data-tab="filters" aria-selected="false">Filters</button>
-      <button type="button" class="tab" data-tab="characters" aria-selected="false">Characters</button>
-      <button type="button" class="tab" data-tab="access" aria-selected="false">Access</button>
+      <button type="button" class="tab" data-tab="camera" aria-label="Camera" title="Camera" aria-selected="true"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v12H3z M12 9a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg><span>Camera</span></button>
+      <button type="button" class="tab" data-tab="effects" aria-label="Effects" title="Effects" aria-selected="false"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2v20 M2 12h20 M5 5l14 14 M19 5L5 19 M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg><span>Effects</span></button>
+      <button type="button" class="tab" data-tab="time" aria-label="Time" title="Time" aria-selected="false"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M12 6v6l4 3"/></svg><span>Time</span></button>
+      <button type="button" class="tab" data-tab="overlays" aria-label="Overlays" title="Overlays" aria-selected="false"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 5h18v14H3z M6 16l4-5 3 3 2-2 3 4 M16 8h.01"/></svg><span>Overlays</span></button>
+      <button type="button" class="tab" data-tab="filters" aria-label="Filters" title="Filters" aria-selected="false"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18z M12 3a9 9 0 0 1 0 18z"/></svg><span>Filters</span></button>
+      <button type="button" class="tab" data-tab="characters" aria-label="Characters" title="Characters" aria-selected="false"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6z M7 21v-5H5l1-5h12l1 5h-2v5 M12 12v9"/></svg><span>Characters</span></button>
+      <button type="button" class="tab" data-tab="access" aria-label="Access" title="Access" aria-selected="false"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M8 12h8 M12 8v8"/></svg><span>Access</span></button>
     </nav>
 
     <div class="panel-content">
     <div data-tab-panel="camera">
       <section>
         <h2>Camera</h2>
-        <label>Field of view <output id="fov-out">75</output>
-          <input id="fov" type="range" min="5" max="150" step="1" value="75">
-        </label>
-        <label>View roll <output id="roll-out">0</output>&deg;
-          <input id="roll" type="range" min="-90" max="90" step="1" value="0">
-        </label>
-        <label>Camera speed <output id="speed-out">1.00</output>
-          <input id="speed" type="range" min="0.1" max="50" step="0.1" value="1">
-        </label>
+        <label class="range-row"><span>Field of view</span><span class="range-value"><output id="fov-out">75</output></span><input id="fov" type="range" min="5" max="150" step="1" value="75"></label>
+        <label class="range-row"><span>View roll</span><span class="range-value"><output id="roll-out">0</output>&deg;</span><input id="roll" type="range" min="-90" max="90" step="1" value="0"></label>
+        <label class="range-row"><span>Camera speed</span><span class="range-value"><output id="speed-out">1.00</output></span><input id="speed" type="range" min="0.1" max="50" step="0.1" value="1"></label>
         <button id="focus-btn" type="button">Take mouse</button>
       </section>
     </div>
@@ -75,9 +69,7 @@
         </fieldset>
         <fieldset>
           <label><input id="fx-vignette-toggle" type="checkbox"> Vignette</label>
-          <label>Strength <output id="vignette-out">45</output>
-            <input id="vignette-strength" type="range" min="0" max="100" step="1" value="45">
-          </label>
+          <label class="range-row"><span>Strength</span><span class="range-value"><output id="vignette-out">45</output></span><input id="vignette-strength" type="range" min="0" max="100" step="1" value="45"></label>
         </fieldset>
         <fieldset>
           <label><input id="fx-letterbox-toggle" type="checkbox"> Letterbox</label>
@@ -95,33 +87,21 @@
         <fieldset>
           <label><input id="fx-tint-toggle" type="checkbox"> Colour tint</label>
           <label>Colour <input id="tint-color" type="color" value="#c08040"></label>
-          <label>Opacity <output id="tint-out">20</output>
-            <input id="tint-opacity" type="range" min="0" max="100" step="1" value="20">
-          </label>
+          <label class="range-row"><span>Opacity</span><span class="range-value"><output id="tint-out">20</output></span><input id="tint-opacity" type="range" min="0" max="100" step="1" value="20"></label>
         </fieldset>
         <fieldset>
           <label><input id="fx-grain-toggle" type="checkbox"> Film grain</label>
-          <label>Amount <output id="grain-out">35</output>
-            <input id="grain-amount" type="range" min="0" max="100" step="1" value="35">
-          </label>
+          <label class="range-row"><span>Amount</span><span class="range-value"><output id="grain-out">35</output></span><input id="grain-amount" type="range" min="0" max="100" step="1" value="35"></label>
         </fieldset>
         <fieldset>
           <label><input id="fx-frame-toggle" type="checkbox"> Frame</label>
-          <label>Width <output id="frame-out">40</output>
-            <input id="frame-width" type="range" min="0" max="120" step="1" value="40">
-          </label>
+          <label class="range-row"><span>Width</span><span class="range-value"><output id="frame-out">40</output></span><input id="frame-width" type="range" min="0" max="120" step="1" value="40"></label>
         </fieldset>
         <fieldset>
           <label><input id="fx-dof-toggle" type="checkbox"> Depth of field</label>
-          <label>Focus distance <output id="dof-distance-out">500</output>
-            <input id="dof-distance" type="range" min="50" max="5000" step="10" value="500">
-          </label>
-          <label>Strength <output id="dof-strength-out">1.00</output>
-            <input id="dof-strength" type="range" min="0" max="1" step="0.05" value="1">
-          </label>
-          <label>Range <output id="dof-range-out">300</output>
-            <input id="dof-range" type="range" min="0" max="5000" step="10" value="300">
-          </label>
+          <label class="range-row"><span>Focus distance</span><span class="range-value"><output id="dof-distance-out">500</output></span><input id="dof-distance" type="range" min="50" max="5000" step="10" value="500"></label>
+          <label class="range-row"><span>Strength</span><span class="range-value"><output id="dof-strength-out">1.00</output></span><input id="dof-strength" type="range" min="0" max="1" step="0.05" value="1"></label>
+          <label class="range-row"><span>Range</span><span class="range-value"><output id="dof-range-out">300</output></span><input id="dof-range" type="range" min="0" max="5000" step="10" value="300"></label>
           <label><input id="dof-auto" type="checkbox"> Auto focus on picked ref</label>
         </fieldset>
         <button id="reset-effects-btn" type="button">Reset effects</button>
@@ -134,15 +114,9 @@
         <fieldset>
           <label><input id="time-freeze" type="checkbox"> Freeze time</label>
         </fieldset>
-        <label>Time multiplier <output id="timemult-out">1.00</output>
-          <input id="timemult" type="range" min="0.01" max="2" step="0.01" value="1">
-        </label>
-        <label>Time of day <output id="hour-out">12:00</output>
-          <input id="hour" type="range" min="0" max="23.99" step="0.01" value="12">
-        </label>
-        <label>Timescale <output id="timescale-out">1</output>x
-          <input id="timescale" type="range" min="1" max="1000" step="1" value="1">
-        </label>
+        <label class="range-row"><span>Time multiplier</span><span class="range-value"><output id="timemult-out">1.00</output></span><input id="timemult" type="range" min="0.01" max="2" step="0.01" value="1"></label>
+        <label class="range-row"><span>Time of day</span><span class="range-value"><output id="hour-out">12:00</output></span><input id="hour" type="range" min="0" max="23.99" step="0.01" value="12"></label>
+        <label class="range-row"><span>Timescale</span><span class="range-value"><output id="timescale-out">1</output>x</span><input id="timescale" type="range" min="1" max="1000" step="1" value="1"></label>
         <label>Weather
           <select id="weather-select"><option value="">Current</option></select>
         </label>
@@ -177,21 +151,13 @@
         <label>Image space modifier
           <select id="filter-select"><option value="">None</option></select>
         </label>
-        <label>Strength <output id="filter-strength-out">1.00</output>
-          <input id="filter-strength" type="range" min="0" max="1" step="0.05" value="1">
-        </label>
+        <label class="range-row"><span>Strength</span><span class="range-value"><output id="filter-strength-out">1.00</output></span><input id="filter-strength" type="range" min="0" max="1" step="0.05" value="1"></label>
       </section>
       <section>
         <h2>Lighting</h2>
-        <label>Brightness <output id="brightness-out">1.00</output>
-          <input id="brightness" type="range" min="0" max="3" step="0.05" value="1">
-        </label>
-        <label>Saturation <output id="saturation-out">1.00</output>
-          <input id="saturation" type="range" min="0" max="3" step="0.05" value="1">
-        </label>
-        <label>Contrast <output id="contrast-out">1.00</output>
-          <input id="contrast" type="range" min="0" max="3" step="0.05" value="1">
-        </label>
+        <label class="range-row"><span>Brightness</span><span class="range-value"><output id="brightness-out">1.00</output></span><input id="brightness" type="range" min="0" max="3" step="0.05" value="1"></label>
+        <label class="range-row"><span>Saturation</span><span class="range-value"><output id="saturation-out">1.00</output></span><input id="saturation" type="range" min="0" max="3" step="0.05" value="1"></label>
+        <label class="range-row"><span>Contrast</span><span class="range-value"><output id="contrast-out">1.00</output></span><input id="contrast" type="range" min="0" max="3" step="0.05" value="1"></label>
         <button id="lighting-reset-btn" type="button">Reset lighting</button>
       </section>
     </div>
@@ -239,9 +205,7 @@
     <div data-tab-panel="access" hidden>
       <section>
         <h2>Access</h2>
-        <label>Panel scale <output id="panel-scale-out">100</output>%
-          <input id="panel-scale" type="range" min="50" max="200" step="5" value="100">
-        </label>
+        <label class="range-row"><span>Panel scale</span><span class="range-value"><output id="panel-scale-out">100</output>%</span><input id="panel-scale" type="range" min="50" max="200" step="5" value="100"></label>
         <p>Mouse: click the panel. Keyboard: Up and Down move between controls, Left and Right change sliders, Tab or Escape releases the panel.</p>
         <p>Gamepad: D-pad moves, A activates, LB and RB switch tabs, B releases the panel.</p>
       </section>
@@ -257,6 +221,7 @@
     <div class="control-hint" aria-hidden="true"><span>↑ ↓ &nbsp; NAVIGATE</span><span>← → &nbsp; ADJUST</span><span>LB / RB &nbsp; TABS</span></div>
   </main>
 
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=5"></script>
+  <script src="preview.js?v=1"></script>
 </body>
 </html>
