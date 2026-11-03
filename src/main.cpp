@@ -13,6 +13,7 @@
 #include "PrismaUI_F4_API.h"
 
 #include "PhotoMode.h"
+#include "PhotoModeLists.h"
 #include "RuntimeSupport.h"
 
 #include <spdlog/sinks/basic_file_sink.h>
@@ -36,10 +37,15 @@ namespace
     constexpr char kIniPath[] = "Data\\F4SE\\Plugins\\PrismaPhotoMode.ini";
     constexpr char kCommandListener[] = "pm_command";
     constexpr char kStateCallback[] = "pmSetState";
+    constexpr char kListsCallback[] = "pmSetLists";
     constexpr float kMinFOV = 5.0F;
     constexpr float kMaxFOV = 150.0F;
     constexpr float kMinSpeed = 0.1F;
     constexpr float kMaxSpeed = 50.0F;
+    constexpr float kMinTimeMult = 0.01F;
+    constexpr float kMaxTimeMult = 2.0F;
+    constexpr float kMaxHour = 23.99F;
+    constexpr float kMaxTimescale = 1000.0F;
     constexpr std::uint32_t kDefaultToggleKey = 0x78;
     constexpr std::uint32_t kDefaultFocusKey = 0x09;
 
@@ -80,12 +86,24 @@ namespace
         const bool active = PPM::PhotoMode::Active();
         const bool focused = active && g_api->HasFocus(g_view);
         const auto json = std::format(
-            R"({{"active":{},"focused":{},"fov":{:.1f},"speed":{:.2f}}})",
+            R"({{"active":{},"focused":{},"fov":{:.1f},"speed":{:.2f},"frozen":{},"timeMult":{:.2f},"hour":{:.2f},"timescale":{:.1f},"timeReady":{}}})",
             active ? "true" : "false",
             focused ? "true" : "false",
             PPM::PhotoMode::CurrentFOV(),
-            PPM::PhotoMode::CurrentTranslateSpeed());
+            PPM::PhotoMode::CurrentTranslateSpeed(),
+            PPM::PhotoMode::Frozen() ? "true" : "false",
+            PPM::PhotoMode::TimeMultiplier(),
+            PPM::PhotoMode::GameHour(),
+            PPM::PhotoMode::TimescaleMultiplier(),
+            PPM::RuntimeSupport::TimeControlsAvailable() ? "true" : "false");
         g_api->InteropCall(g_view, kStateCallback, json.c_str());
+    }
+
+    void PushLists()
+    {
+        if (!ViewReady() || !PPM::RuntimeSupport::TimeControlsAvailable()) return;
+        const auto json = PPM::PhotoModeLists::Build();
+        g_api->InteropCall(g_view, kListsCallback, json.c_str());
     }
 
     void SetFocus(bool a_focus)
@@ -104,6 +122,7 @@ namespace
         if (!ViewReady() || !PPM::PhotoMode::Enter()) return;
         g_api->Show(g_view);
         PushState();
+        PushLists();
     }
 
     void ExitMode()
@@ -117,6 +136,14 @@ namespace
     }
 
     bool ParseFloat(std::string_view a_text, float& a_value)
+    {
+        const auto* first = a_text.data();
+        const auto* last = first + a_text.size();
+        const auto result = std::from_chars(first, last, a_value);
+        return result.ec == std::errc{} && result.ptr == last;
+    }
+
+    bool ParseUnsigned(std::string_view a_text, std::uint32_t& a_value)
     {
         const auto* first = a_text.data();
         const auto* last = first + a_text.size();
@@ -144,6 +171,21 @@ namespace
         } else if (name == "reset") {
             PPM::PhotoMode::ResetCamera();
             PushState();
+        } else if (name == "freeze") {
+            PPM::PhotoMode::SetFrozen(value == "1");
+            PushState();
+        } else if (name == "timemult") {
+            if (ParseFloat(value, number)) PPM::PhotoMode::SetTimeMultiplier(std::clamp(number, kMinTimeMult, kMaxTimeMult));
+        } else if (name == "hour") {
+            if (ParseFloat(value, number)) PPM::PhotoMode::SetGameHour(std::clamp(number, 0.0F, kMaxHour));
+        } else if (name == "timescale") {
+            if (ParseFloat(value, number)) PPM::PhotoMode::SetTimescaleMultiplier(std::clamp(number, 1.0F, kMaxTimescale));
+        } else if (name == "weather") {
+            std::uint32_t id = 0;
+            ParseUnsigned(value, id);
+            PPM::PhotoMode::SetWeather(id);
+        } else if (name == "lists") {
+            PushLists();
         } else if (name == "exit") {
             ExitMode();
             PushState();
@@ -161,6 +203,7 @@ namespace
         if (!PPM::PhotoMode::Active()) g_api->Hide(a_view);
         g_domReady = true;
         PushState();
+        PushLists();
     }
 
     class PhotoModeInput final : public RE::BSInputEventUser
@@ -224,6 +267,7 @@ namespace
                 spdlog::critical("PrismaPhotoMode: required runtime mappings are unavailable; photo mode disabled");
                 return;
             }
+            PPM::RuntimeSupport::ValidateTimeMappings(g_runtimeFamily);
             g_api = PRISMA_UI_API::RequestPluginAPI<PRISMA_UI_API::IVPrismaUI10>();
             if (!g_api) {
                 spdlog::error("PrismaPhotoMode: PrismaUI_F4 V10 API unavailable; photo mode disabled");

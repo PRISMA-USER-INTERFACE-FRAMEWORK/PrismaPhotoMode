@@ -197,6 +197,28 @@ body {
   cursor: pointer;
 }
 
+#panel .tabs {
+  display: flex;
+  gap: 4px;
+  margin: 8px 0 4px;
+}
+
+#panel .tabs .tab {
+  flex: 1;
+  width: auto;
+  margin: 0;
+}
+
+#panel .tabs .tab[aria-selected="true"] {
+  border-color: rgba(255, 255, 255, 0.55);
+  background: #2a3644;
+}
+
+#panel :disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 body.shooting #panel,
 body.shooting #show-panel,
 body.shooting #fx-grid {

@@ -1,7 +1,10 @@
 #include "PhotoMode.h"
+#include "RuntimeSupport.h"
 
-#include <RE/C/CameraStates.h>
 #include <RE/B/BGSSaveLoadManager.h>
+#include <RE/B/BSTimer.h>
+#include <RE/C/Calendar.h>
+#include <RE/C/CameraStates.h>
 #include <RE/C/ControlMap.h>
 #include <RE/H/HUDModeType.h>
 #include <RE/M/Main.h>
@@ -9,6 +12,9 @@
 #include <RE/P/PlayerCamera.h>
 #include <RE/S/SendHUDMessage.h>
 #include <RE/S/Setting.h>
+#include <RE/S/Sky.h>
+#include <RE/T/TESDataHandler.h>
+#include <RE/T/TESWeather.h>
 #include <RE/U/UserEvents.h>
 
 #include <spdlog/spdlog.h>
@@ -30,10 +36,16 @@ namespace PPM::PhotoMode
             bool savingAllowed{ true };
             float fov{ 0.0F };
             float translateSpeed{ 0.0F };
+            float globalTimeMult{ 1.0F };
+            float timescale{ 1.0F };
+            float gameHour{ 0.0F };
+            RE::TESWeather* weather{ nullptr };
         };
 
         Snapshot g_snapshot{};
         bool g_active{ false };
+        float g_timescaleMult{ 1.0F };
+        bool g_weatherForced{ false };
 
         bool IsFreeCamera(RE::PlayerCamera* a_camera)
         {
@@ -50,6 +62,39 @@ namespace PPM::PhotoMode
             const auto* controlMap = RE::ControlMap::GetSingleton();
             if (!controlMap || controlMap->contextPriorityStack.size() == 0) return false;
             return std::ranges::contains(allowed, controlMap->contextPriorityStack.back());
+        }
+
+        RE::TESWeather* FindWeather(std::uint32_t a_formID)
+        {
+            if (!RuntimeSupport::TimeControlsAvailable() || !a_formID) return nullptr;
+            auto* handler = RE::TESDataHandler::GetSingleton();
+            if (!handler) return nullptr;
+            for (auto* weather : handler->GetFormArray<RE::TESWeather>()) {
+                if (weather && weather->GetFormID() == a_formID) return weather;
+            }
+            return nullptr;
+        }
+
+        void ReleaseWeather()
+        {
+            if (!g_weatherForced) return;
+            if (auto* sky = RE::Sky::GetSingleton()) {
+                sky->ReleaseWeatherOverride();
+                sky->ResetWeather();
+                if (g_snapshot.weather) sky->ForceWeather(g_snapshot.weather, false);
+            }
+            g_weatherForced = false;
+        }
+
+        void RestoreTime()
+        {
+            g_timescaleMult = 1.0F;
+            if (!RuntimeSupport::TimeControlsAvailable()) return;
+            if (auto* timer = RE::BSTimer::GetSingleton()) timer->SetGlobalTimeMultiplier(g_snapshot.globalTimeMult, true);
+            if (auto* calendar = RE::Calendar::GetSingleton()) {
+                if (calendar->timeScale) calendar->timeScale->value = g_snapshot.timescale;
+                if (calendar->gameHour) calendar->gameHour->value = g_snapshot.gameHour;
+            }
         }
     }
 
@@ -75,6 +120,15 @@ namespace PPM::PhotoMode
         g_snapshot.savingAllowed = saves->savingAllowed;
         g_snapshot.fov = camera->worldFOV;
         g_snapshot.translateSpeed = CurrentTranslateSpeed();
+        if (RuntimeSupport::TimeControlsAvailable()) {
+            g_snapshot.globalTimeMult = RE::BSTimer::QGlobalTimeMultiplier();
+            if (auto* calendar = RE::Calendar::GetSingleton()) {
+                if (calendar->timeScale) g_snapshot.timescale = calendar->timeScale->value;
+                if (calendar->gameHour) g_snapshot.gameHour = calendar->gameHour->value;
+            }
+            auto* sky = RE::Sky::GetSingleton();
+            g_snapshot.weather = sky ? sky->currentWeather : nullptr;
+        }
 
         if (!g_snapshot.freeCamera) {
             camera->ToggleFreeCameraMode(false);
@@ -85,6 +139,8 @@ namespace PPM::PhotoMode
         }
         main->freezeTime = true;
         saves->savingAllowed = false;
+        g_timescaleMult = 1.0F;
+        g_weatherForced = false;
         RE::SendHUDMessage::PushHUDMode(RE::HUDModeType(kHudMode));
         g_active = true;
         spdlog::info("PrismaPhotoMode: entered freeCamera={} fov={:.1f}", g_snapshot.freeCamera, g_snapshot.fov);
@@ -101,6 +157,8 @@ namespace PPM::PhotoMode
         if (camera && !g_snapshot.freeCamera && IsFreeCamera(camera)) camera->ToggleFreeCameraMode(false);
         if (main) main->freezeTime = g_snapshot.freezeTime;
         if (saves) saves->savingAllowed = g_snapshot.savingAllowed;
+        ReleaseWeather();
+        RestoreTime();
         SetFOV(g_snapshot.fov);
         SetTranslateSpeed(g_snapshot.translateSpeed);
         RE::SendHUDMessage::PopHUDMode(RE::HUDModeType(kHudMode));
@@ -142,5 +200,72 @@ namespace PPM::PhotoMode
     {
         const auto* controls = RE::MenuControls::GetSingleton();
         return controls && controls->QueueScreenshot();
+    }
+
+    void SetFrozen(bool a_frozen)
+    {
+        if (!g_active) return;
+        if (auto* main = RE::Main::GetSingleton()) main->freezeTime = a_frozen;
+    }
+
+    bool Frozen() noexcept
+    {
+        const auto* main = RE::Main::GetSingleton();
+        return main && main->freezeTime;
+    }
+
+    void SetTimeMultiplier(float a_multiplier)
+    {
+        if (!g_active || !RuntimeSupport::TimeControlsAvailable()) return;
+        if (auto* timer = RE::BSTimer::GetSingleton()) timer->SetGlobalTimeMultiplier(a_multiplier, true);
+    }
+
+    float TimeMultiplier() noexcept
+    {
+        return RuntimeSupport::TimeControlsAvailable() ? RE::BSTimer::QGlobalTimeMultiplier() : 1.0F;
+    }
+
+    void SetGameHour(float a_hour)
+    {
+        if (!g_active || !RuntimeSupport::TimeControlsAvailable()) return;
+        if (auto* calendar = RE::Calendar::GetSingleton(); calendar && calendar->gameHour) calendar->gameHour->value = a_hour;
+    }
+
+    float GameHour() noexcept
+    {
+        if (!RuntimeSupport::TimeControlsAvailable()) return 0.0F;
+        const auto* calendar = RE::Calendar::GetSingleton();
+        return calendar && calendar->gameHour ? calendar->gameHour->value : 0.0F;
+    }
+
+    void SetTimescaleMultiplier(float a_multiplier)
+    {
+        if (!g_active || !RuntimeSupport::TimeControlsAvailable()) return;
+        g_timescaleMult = a_multiplier;
+        if (auto* calendar = RE::Calendar::GetSingleton(); calendar && calendar->timeScale) {
+            calendar->timeScale->value = g_snapshot.timescale * a_multiplier;
+        }
+    }
+
+    float TimescaleMultiplier() noexcept
+    {
+        return g_timescaleMult;
+    }
+
+    void SetWeather(std::uint32_t a_formID)
+    {
+        if (!g_active || !RuntimeSupport::TimeControlsAvailable()) return;
+        auto* sky = RE::Sky::GetSingleton();
+        auto* weather = FindWeather(a_formID);
+        if (!sky || (a_formID && !weather)) {
+            spdlog::warn("PrismaPhotoMode: weather {:X} is not a known TESWeather", a_formID);
+            return;
+        }
+        if (!weather) {
+            ReleaseWeather();
+            return;
+        }
+        sky->ForceWeather(weather, true);
+        g_weatherForced = true;
     }
 }

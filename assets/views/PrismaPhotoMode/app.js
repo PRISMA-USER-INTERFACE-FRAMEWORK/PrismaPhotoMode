@@ -135,6 +135,29 @@
     $(outId).textContent = Number(value).toFixed(digits);
   }
 
+  const TIME_CONTROLS = ["timemult", "hour", "timescale", "weather-select", "weather-clear-btn"];
+
+  function formatHour(value) {
+    const hours = Math.floor(value);
+    const minutes = Math.min(59, Math.round((value - hours) * 60));
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  }
+
+  function setTimeEnabled(enabled) {
+    TIME_CONTROLS.forEach((id) => {
+      $(id).disabled = !enabled;
+    });
+  }
+
+  function setWeatherOptions(weathers) {
+    const select = $("weather-select");
+    const current = select.value;
+    select.textContent = "";
+    select.add(new Option("Current", ""));
+    weathers.forEach((weather) => select.add(new Option(weather.name, String(weather.id))));
+    select.value = current;
+  }
+
   window.pmSetState = (payload) => {
     let data;
     try {
@@ -146,6 +169,25 @@
     setFocusUi(Boolean(data.focused));
     if (typeof data.fov === "number") syncSlider("fov", "fov-out", data.fov, 0);
     if (typeof data.speed === "number") syncSlider("speed", "speed-out", data.speed, 2);
+    if (typeof data.frozen === "boolean" && document.activeElement !== $("time-freeze")) $("time-freeze").checked = data.frozen;
+    setTimeEnabled(Boolean(data.timeReady));
+    if (typeof data.timeMult === "number") syncSlider("timemult", "timemult-out", data.timeMult, 2);
+    if (typeof data.timescale === "number") syncSlider("timescale", "timescale-out", data.timescale, 0);
+    if (typeof data.hour === "number") {
+      if (document.activeElement !== $("hour")) $("hour").value = data.hour;
+      $("hour-out").textContent = formatHour(data.hour);
+    }
+  };
+
+  window.pmSetLists = (payload) => {
+    let data;
+    try {
+      data = JSON.parse(payload);
+    } catch (error) {
+      console.error("pmSetLists: bad payload", error);
+      return;
+    }
+    setWeatherOptions(Array.isArray(data.weathers) ? data.weathers : []);
   };
 
   $("fov").addEventListener("input", (event) => {
@@ -171,6 +213,34 @@
     "fx-frame-toggle",
     "frame-width",
   ].forEach((id) => $(id).addEventListener("input", applyEffects));
+
+  $("time-freeze").addEventListener("change", (event) => command(`freeze|${event.target.checked ? 1 : 0}`));
+  $("timemult").addEventListener("input", (event) => {
+    $("timemult-out").textContent = Number(event.target.value).toFixed(2);
+    command(`timemult|${event.target.value}`);
+  });
+  $("hour").addEventListener("input", (event) => {
+    $("hour-out").textContent = formatHour(Number(event.target.value));
+    command(`hour|${event.target.value}`);
+  });
+  $("timescale").addEventListener("input", (event) => {
+    $("timescale-out").textContent = event.target.value;
+    command(`timescale|${event.target.value}`);
+  });
+  $("weather-select").addEventListener("change", (event) => command(`weather|${event.target.value}`));
+  $("weather-clear-btn").addEventListener("click", () => {
+    $("weather-select").value = "";
+    command("weather|0");
+  });
+
+  document.querySelectorAll(".tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach((other) => other.setAttribute("aria-selected", String(other === tab)));
+      document.querySelectorAll("[data-tab-panel]").forEach((panel) => {
+        panel.hidden = panel.dataset.tabPanel !== tab.dataset.tab;
+      });
+    });
+  });
 
   $("focus-btn").addEventListener("click", toggleFocus);
   $("screenshot-btn").addEventListener("click", takeScreenshot);

@@ -27,62 +27,91 @@
       <span id="focus-state">Camera</span>
     </header>
 
-    <section>
-      <h2>Camera</h2>
-      <label>Field of view <output id="fov-out">75</output>
-        <input id="fov" type="range" min="5" max="150" step="1" value="75">
-      </label>
-      <label>Camera speed <output id="speed-out">1.00</output>
-        <input id="speed" type="range" min="0.1" max="50" step="0.1" value="1">
-      </label>
-      <button id="focus-btn" type="button">Take mouse</button>
-    </section>
+    <nav class="tabs" aria-label="Photo mode tabs">
+      <button type="button" class="tab" data-tab="camera" aria-selected="true">Camera</button>
+      <button type="button" class="tab" data-tab="time" aria-selected="false">Time</button>
+    </nav>
 
-    <section>
-      <h2>Effects</h2>
-      <fieldset>
-        <label><input id="fx-grid-toggle" type="checkbox"> Rule-of-thirds grid</label>
-      </fieldset>
-      <fieldset>
-        <label><input id="fx-vignette-toggle" type="checkbox"> Vignette</label>
-        <label>Strength <output id="vignette-out">45</output>
-          <input id="vignette-strength" type="range" min="0" max="100" step="1" value="45">
+    <div data-tab-panel="camera">
+      <section>
+        <h2>Camera</h2>
+        <label>Field of view <output id="fov-out">75</output>
+          <input id="fov" type="range" min="5" max="150" step="1" value="75">
         </label>
-      </fieldset>
-      <fieldset>
-        <label><input id="fx-letterbox-toggle" type="checkbox"> Letterbox</label>
-        <label>Aspect
-          <select id="letterbox-aspect">
-            <option value="2.39">2.39:1</option>
-            <option value="2.35">2.35:1</option>
-            <option value="1.85">1.85:1</option>
-            <option value="1.78">16:9</option>
-            <option value="1.33">4:3</option>
-            <option value="1.00">1:1</option>
-          </select>
+        <label>Camera speed <output id="speed-out">1.00</output>
+          <input id="speed" type="range" min="0.1" max="50" step="0.1" value="1">
         </label>
-      </fieldset>
-      <fieldset>
-        <label><input id="fx-tint-toggle" type="checkbox"> Colour tint</label>
-        <label>Colour <input id="tint-color" type="color" value="#c08040"></label>
-        <label>Opacity <output id="tint-out">20</output>
-          <input id="tint-opacity" type="range" min="0" max="100" step="1" value="20">
+        <button id="focus-btn" type="button">Take mouse</button>
+      </section>
+
+      <section>
+        <h2>Effects</h2>
+        <fieldset>
+          <label><input id="fx-grid-toggle" type="checkbox"> Rule-of-thirds grid</label>
+        </fieldset>
+        <fieldset>
+          <label><input id="fx-vignette-toggle" type="checkbox"> Vignette</label>
+          <label>Strength <output id="vignette-out">45</output>
+            <input id="vignette-strength" type="range" min="0" max="100" step="1" value="45">
+          </label>
+        </fieldset>
+        <fieldset>
+          <label><input id="fx-letterbox-toggle" type="checkbox"> Letterbox</label>
+          <label>Aspect
+            <select id="letterbox-aspect">
+              <option value="2.39">2.39:1</option>
+              <option value="2.35">2.35:1</option>
+              <option value="1.85">1.85:1</option>
+              <option value="1.78">16:9</option>
+              <option value="1.33">4:3</option>
+              <option value="1.00">1:1</option>
+            </select>
+          </label>
+        </fieldset>
+        <fieldset>
+          <label><input id="fx-tint-toggle" type="checkbox"> Colour tint</label>
+          <label>Colour <input id="tint-color" type="color" value="#c08040"></label>
+          <label>Opacity <output id="tint-out">20</output>
+            <input id="tint-opacity" type="range" min="0" max="100" step="1" value="20">
+          </label>
+        </fieldset>
+        <fieldset>
+          <label><input id="fx-grain-toggle" type="checkbox"> Film grain</label>
+          <label>Amount <output id="grain-out">35</output>
+            <input id="grain-amount" type="range" min="0" max="100" step="1" value="35">
+          </label>
+        </fieldset>
+        <fieldset>
+          <label><input id="fx-frame-toggle" type="checkbox"> Frame</label>
+          <label>Width <output id="frame-out">40</output>
+            <input id="frame-width" type="range" min="0" max="120" step="1" value="40">
+          </label>
+        </fieldset>
+        <button id="reset-effects-btn" type="button">Reset effects</button>
+      </section>
+    </div>
+
+    <div data-tab-panel="time" hidden>
+      <section>
+        <h2>Time</h2>
+        <fieldset>
+          <label><input id="time-freeze" type="checkbox"> Freeze time</label>
+        </fieldset>
+        <label>Time multiplier <output id="timemult-out">1.00</output>
+          <input id="timemult" type="range" min="0.01" max="2" step="0.01" value="1">
         </label>
-      </fieldset>
-      <fieldset>
-        <label><input id="fx-grain-toggle" type="checkbox"> Film grain</label>
-        <label>Amount <output id="grain-out">35</output>
-          <input id="grain-amount" type="range" min="0" max="100" step="1" value="35">
+        <label>Time of day <output id="hour-out">12:00</output>
+          <input id="hour" type="range" min="0" max="23.99" step="0.01" value="12">
         </label>
-      </fieldset>
-      <fieldset>
-        <label><input id="fx-frame-toggle" type="checkbox"> Frame</label>
-        <label>Width <output id="frame-out">40</output>
-          <input id="frame-width" type="range" min="0" max="120" step="1" value="40">
+        <label>Timescale <output id="timescale-out">1</output>x
+          <input id="timescale" type="range" min="1" max="1000" step="1" value="1">
         </label>
-      </fieldset>
-      <button id="reset-effects-btn" type="button">Reset effects</button>
-    </section>
+        <label>Weather
+          <select id="weather-select"><option value="">Current</option></select>
+        </label>
+        <button id="weather-clear-btn" type="button">Clear weather override</button>
+      </section>
+    </div>
 
     <section>
       <h2>Capture</h2>

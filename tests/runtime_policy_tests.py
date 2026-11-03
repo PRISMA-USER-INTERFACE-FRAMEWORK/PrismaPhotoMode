@@ -38,19 +38,42 @@ for name in (
     "Main::SetCameraFOV",
     "SendHUDMessage::PushHUDMode",
     "SendHUDMessage::PopHUDMode",
+    "Main::Singleton",
+    "BSTimer::Singleton",
+    "BSTimer::QGlobalTimeMultiplier",
+    "BSTimer::SetGlobalTimeMultiplier",
+    "Calendar::Singleton",
+    "Sky::Singleton",
+    "Sky::ForceWeather",
+    "Sky::ResetWeather",
+    "TESDataHandler::Singleton",
 ):
     assert f'"{name}"' in runtime, f"RuntimeSupport.cpp must validate {name}"
+
+for path in sorted(src.glob("*.cpp")) + sorted(src.glob("*.h")):
+    if path.name == "RuntimeSupport.cpp":
+        continue
+    assert "RE::ID::" not in path.read_text(encoding="utf-8"), f"{path.name} must reach engine ids through RuntimeSupport"
 
 for version in ("F4SE::RUNTIME_1_10_163", "F4SE::RUNTIME_1_11_137"):
     assert version in runtime, f"RuntimeSupport.cpp must classify {version}"
 
-assert "NG unverified" in runtime, "RuntimeSupport.cpp must reject NG until its ids are verified"
-assert runtime.index("family == Family::NG") < runtime.index("->address()"), "the NG rejection must precede every address() call"
+assert "no verified BGSSaveLoadManager id" in runtime, "RuntimeSupport.cpp must reject NG until BGSSaveLoadManager is verified"
+for triple in (
+    "756304, 2698043, 2698043",
+    "224913, 2248368, 2248368",
+    "1348813, 2228973, 2228973",
+    "1321764, 2222443, 2222443",
+    "1495042, 2222444, 2222444",
+):
+    assert re.search(rf"REL::VariantID k\w+\{{ {re.escape(triple)} \}}", runtime), f"RuntimeSupport.cpp must carry the verified NG id triple {triple}"
 
 assert "catch (" not in runtime and "catch (...)" not in runtime, "RuntimeSupport.cpp must not swallow exceptions"
 assert "resolving required runtime mapping" in runtime
-assert "address < textStart || address >= textEnd" in runtime
+assert "inSection(data) || inSection(bss)" in runtime, "singleton mappings must resolve in .data or .bss"
+assert "Kind::Function ? inSection(text)" in runtime, "function mappings must resolve in .text"
 assert "enum class Family" in runtime_header
 assert "ValidateMappings" in main and "ValidateMappings(g_runtimeFamily)" in main
+assert "ValidateTimeMappings(g_runtimeFamily)" in main, "main.cpp must gate the time controls through ValidateTimeMappings"
 
 print("PrismaPhotoMode runtime and PrismaUI policy tests passed")
