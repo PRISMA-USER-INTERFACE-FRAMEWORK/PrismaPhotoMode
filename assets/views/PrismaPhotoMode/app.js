@@ -350,8 +350,8 @@
     $("filter-strength-out").textContent = Number(event.target.value).toFixed(2);
     command(`filterstrength|${event.target.value}`);
   });
-  $("freeze-btn").addEventListener("click", () => command("freeze|1"));
-  $("release-btn").addEventListener("click", () => command("freeze|0"));
+  $("freeze-btn").addEventListener("click", () => command("pickfreeze|1"));
+  $("release-btn").addEventListener("click", () => command("pickfreeze|0"));
   $("face-btn").addEventListener("click", () => command("face|1"));
   $("idle-btn").addEventListener("click", () => command(`idle|${$("idle-select").value || 0}`));
   $("art-btn").addEventListener("click", () => command(`art|${$("art-select").value || 0}`));

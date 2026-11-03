@@ -74,7 +74,7 @@ namespace PPM::RuntimeSupport
             Mapping{ "BSTimer::QGlobalTimeMultiplier", &kQGlobalTimeMultiplier, Kind::Global },
             Mapping{ "BSTimer::SetGlobalTimeMultiplier", &kSetGlobalTimeMultiplier, Kind::Function },
             Mapping{ "Calendar::Singleton", &kCalendarSingleton, Kind::Global },
-            Mapping{ "Sky::Singleton", &kSkySingleton, Kind::Global },
+            Mapping{ "Sky::Singleton", &kSkySingleton, Kind::Function },
             Mapping{ "Sky::ForceWeather", &kForceWeather, Kind::Function },
             Mapping{ "Sky::ResetWeather", &kResetWeather, Kind::Function },
             Mapping{ "TESDataHandler::Singleton", &kTESDataHandlerSingleton, Kind::Global }

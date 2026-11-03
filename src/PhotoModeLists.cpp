@@ -8,9 +8,12 @@
 #include <RE/T/TESWeather.h>
 
 #include <algorithm>
+#include <cctype>
+#include <cstdint>
 #include <filesystem>
 #include <format>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace PPM::PhotoModeLists
@@ -18,6 +21,7 @@ namespace PPM::PhotoModeLists
     namespace
     {
         constexpr char kOverlayRoot[] = "Data/PrismaUI_F4/views/PrismaPhotoMode/overlays";
+        constexpr std::size_t kMaxFormEntries = 2000;
 
         void AppendEscaped(std::string& a_json, std::string_view a_text)
         {
@@ -31,22 +35,35 @@ namespace PPM::PhotoModeLists
             }
         }
 
+        bool IsPng(const std::filesystem::path& a_path)
+        {
+            auto extension = a_path.extension().string();
+            std::ranges::transform(extension, extension.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+            return extension == ".png";
+        }
+
         template <class T>
         std::string FormArray()
         {
-            std::string json{ "[" };
+            std::vector<std::pair<std::string, std::uint32_t>> entries;
             if (auto* handler = RE::TESDataHandler::GetSingleton()) {
-                bool first = true;
                 for (auto* form : handler->GetFormArray<T>()) {
                     if (!form) continue;
-                    if (!first) json += ',';
-                    first = false;
                     const char* editorId = form->GetFormEditorID();
-                    const auto name = editorId && *editorId ? std::string{ editorId } : std::format("{:08X}", form->GetFormID());
-                    json += std::format(R"({{"id":{},"name":")", form->GetFormID());
-                    AppendEscaped(json, name);
-                    json += "\"}";
+                    entries.emplace_back(editorId && *editorId ? std::string{ editorId } : std::format("{:08X}", form->GetFormID()), form->GetFormID());
                 }
+            }
+            std::ranges::sort(entries);
+            if (entries.size() > kMaxFormEntries) entries.resize(kMaxFormEntries);
+
+            std::string json{ "[" };
+            bool first = true;
+            for (const auto& [name, id] : entries) {
+                if (!first) json += ',';
+                first = false;
+                json += std::format(R"({{"id":{},"name":")", id);
+                AppendEscaped(json, name);
+                json += "\"}";
             }
             json += ']';
             return json;
@@ -90,7 +107,7 @@ namespace PPM::PhotoModeLists
         for (const auto& category : categories) {
             std::vector<std::string> names;
             for (const auto& entry : fs::directory_iterator(category, ec)) {
-                if (entry.is_regular_file(ec) && entry.path().extension().string() == ".png") names.push_back(entry.path().filename().string());
+                if (entry.is_regular_file(ec) && IsPng(entry.path())) names.push_back(entry.path().filename().string());
             }
             std::ranges::sort(names);
 

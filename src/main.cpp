@@ -248,7 +248,7 @@ namespace
             if (ParseFloat(value, number)) PPM::PhotoMode::SetFilterStrength(std::clamp(number, 0.0F, 1.0F));
         } else if (name == "pick") {
             PushPick();
-        } else if (name == "freeze") {
+        } else if (name == "pickfreeze") {
             PPM::PhotoMode::SetPickedFrozen(value == "1");
         } else if (name == "face") {
             PPM::PhotoMode::FacePicked();

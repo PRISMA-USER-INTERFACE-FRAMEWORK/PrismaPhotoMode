@@ -116,6 +116,48 @@ assert "catch (" not in runtime and "catch (...)" not in runtime, "RuntimeSuppor
 assert "resolving required runtime mapping" in runtime
 assert "inSection(data) || inSection(bss)" in runtime, "singleton mappings must resolve in .data or .bss"
 assert "Kind::Function ? inSection(text)" in runtime, "function mappings must resolve in .text"
+
+FUNCTION_MAPPINGS = (
+    "PlayerCamera::ToggleFreeCameraMode",
+    "Main::SetCameraFOV",
+    "SendHUDMessage::PushHUDMode",
+    "SendHUDMessage::PopHUDMode",
+    "BSTimer::SetGlobalTimeMultiplier",
+    "Sky::Singleton",
+    "Sky::ForceWeather",
+    "Sky::ResetWeather",
+    "ImageSpaceModifierInstanceDOF::Trigger",
+    "ImageSpaceModifierInstance::Stop",
+    "PlayerCamera::GetCameraPosition",
+    "ImageSpaceModifierInstanceForm::Trigger1",
+    "ImageSpaceModifierInstanceForm::Stop1",
+    "Actor::InitiateDoNothingPackage",
+    "Actor::EndInterruptPackage",
+    "Actor::SetHeading",
+    "AIProcess::StopCurrentIdle",
+    "AIProcess::SetupSpecialIdle",
+    "TESObjectREFR::ApplyArtObject",
+    "TESObjectREFR::ApplyEffectShader",
+    "TESObjectREFR::GetHandle",
+    "TESObjectREFR::GetDisplayFullName",
+)
+GLOBAL_MAPPINGS = (
+    "Main::Singleton",
+    "BGSSaveLoadManager::Singleton",
+    "UI::Singleton",
+    "BSTimer::Singleton",
+    "BSTimer::QGlobalTimeMultiplier",
+    "Calendar::Singleton",
+    "TESDataHandler::Singleton",
+    "Console::GetCurrentPickIndex",
+    "Console::GetPickRefs",
+)
+mapping_kinds = re.findall(r'Mapping\{ "([^"]+)", &\w+, Kind::(Function|Global) \}', runtime)
+assert mapping_kinds, "RuntimeSupport.cpp must declare Mapping entries with a Kind"
+for mapping_name, kind in mapping_kinds:
+    expected = "Function" if mapping_name in FUNCTION_MAPPINGS else "Global" if mapping_name in GLOBAL_MAPPINGS else None
+    assert kind == expected, f"{mapping_name} must be Kind::{expected}, found Kind::{kind}"
+assert {name for name, _ in mapping_kinds} == set(FUNCTION_MAPPINGS) | set(GLOBAL_MAPPINGS), "every RuntimeSupport mapping must be pinned to a Kind"
 assert "enum class Family" in runtime_header
 assert "ValidateMappings" in main and "ValidateMappings(g_runtimeFamily)" in main
 assert "ValidateTimeMappings(g_runtimeFamily)" in main, "main.cpp must gate the time controls through ValidateTimeMappings"

@@ -64,7 +64,7 @@ namespace PPM::PhotoMode
         constexpr float kDofDuration = 1.0e6F;
         constexpr float kDofRetriggerDistance = 1.0F;
 
-        RE::ImageSpaceModifierInstanceDOF* g_dof{ nullptr };
+        RE::NiPointer<RE::ImageSpaceModifierInstanceDOF> g_dof{};
         float g_dofAppliedDistance{ 0.0F };
         float g_dofDistance{ kDefaultDofDistance };
         bool g_dofOn{ false };
@@ -138,6 +138,42 @@ namespace PPM::PhotoMode
         }
 
         RE::ObjectRefHandle g_frozen{};
+        RE::ObjectRefHandle g_faced{};
+        float g_facedHeading{ 0.0F };
+        RE::ObjectRefHandle g_idled{};
+
+        void ReleaseFrozen()
+        {
+            const auto ref = g_frozen.get();
+            auto* actor = ref ? ref->As<RE::Actor>() : nullptr;
+            g_frozen = RE::ObjectRefHandle{};
+            if (!actor) return;
+            actor->EndInterruptPackage(false);
+            if (actor->currentProcess) actor->currentProcess->StopCurrentIdle(actor, true, false);
+        }
+
+        void RestoreFaced()
+        {
+            const auto ref = g_faced.get();
+            auto* actor = ref ? ref->As<RE::Actor>() : nullptr;
+            g_faced = RE::ObjectRefHandle{};
+            if (actor) actor->SetHeading(g_facedHeading);
+        }
+
+        void StopIdled()
+        {
+            const auto ref = g_idled.get();
+            auto* actor = ref ? ref->As<RE::Actor>() : nullptr;
+            g_idled = RE::ObjectRefHandle{};
+            if (actor && actor->currentProcess) actor->currentProcess->StopCurrentIdle(actor, true, false);
+        }
+
+        void ResetPicked()
+        {
+            ReleaseFrozen();
+            RestoreFaced();
+            StopIdled();
+        }
 
         void StopFilter()
         {
@@ -266,7 +302,7 @@ namespace PPM::PhotoMode
         RestoreTime();
         ResetDepthOfField();
         ResetFilter();
-        SetPickedFrozen(false);
+        ResetPicked();
         SetFOV(g_snapshot.fov);
         SetTranslateSpeed(g_snapshot.translateSpeed);
         RE::SendHUDMessage::PopHUDMode(RE::HUDModeType(kHudMode));
@@ -419,20 +455,16 @@ namespace PPM::PhotoMode
     void SetPickedFrozen(bool a_on)
     {
         if (!RuntimeSupport::CharactersAvailable()) return;
-        if (a_on) {
-            const auto ref = PickedRef();
-            auto* actor = ref ? ref->As<RE::Actor>() : nullptr;
-            if (!actor) return;
-            actor->InitiateDoNothingPackage();
-            g_frozen = actor->GetHandle();
+        if (!a_on) {
+            ReleaseFrozen();
             return;
         }
-        const auto ref = g_frozen.get();
+        const auto ref = PickedRef();
         auto* actor = ref ? ref->As<RE::Actor>() : nullptr;
-        g_frozen = RE::ObjectRefHandle{};
-        if (!actor) return;
-        actor->EndInterruptPackage(false);
-        if (actor->currentProcess) actor->currentProcess->StopCurrentIdle(actor, true, false);
+        if (!actor || actor->IsPlayerRef()) return;
+        ReleaseFrozen();
+        actor->InitiateDoNothingPackage();
+        g_frozen = actor->GetHandle();
     }
 
     void FacePicked()
@@ -442,7 +474,10 @@ namespace PPM::PhotoMode
         auto* actor = ref ? ref->As<RE::Actor>() : nullptr;
         const auto* camera = RE::PlayerCamera::GetSingleton();
         RE::NiPoint3 cameraPosition{};
-        if (!actor || !camera || !camera->GetCameraPosition(cameraPosition, true)) return;
+        if (!actor || actor->IsPlayerRef() || !camera || !camera->GetCameraPosition(cameraPosition, true)) return;
+        RestoreFaced();
+        g_faced = actor->GetHandle();
+        g_facedHeading = actor->GetHeading();
         const auto delta = cameraPosition - actor->GetPosition();
         actor->SetHeading(std::atan2(delta.x, delta.y));
     }
@@ -455,6 +490,7 @@ namespace PPM::PhotoMode
         auto* idle = FindForm<RE::TESIdleForm>(a_formID);
         if (!actor || !idle || !actor->currentProcess) return;
         actor->currentProcess->PlayIdle(*actor, idle, nullptr);
+        g_idled = actor->GetHandle();
     }
 
     void ApplyArtToPick(std::uint32_t a_formID)
