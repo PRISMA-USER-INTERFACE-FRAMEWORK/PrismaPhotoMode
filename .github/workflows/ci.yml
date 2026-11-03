@@ -75,11 +75,20 @@ jobs:
           COMMONLIBF4_PATH: ${{ github.workspace }}/.deps/commonlibf4
         run: python tools/ci.py dll
 
-      - name: Upload built DLL
+      - name: Package mod
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path package/F4SE/Plugins, package/PrismaUI_F4/views | Out-Null
+          Copy-Item build-clang/windows/x64/release/PrismaPhotoMode.dll package/F4SE/Plugins/
+          Copy-Item config/PrismaPhotoMode.ini package/F4SE/Plugins/
+          Copy-Item -Recurse assets/views/PrismaPhotoMode package/PrismaUI_F4/views/
+          Compress-Archive -Path package/* -DestinationPath PrismaPhotoMode.zip
+
+      - name: Upload mod package
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: PrismaPhotoMode-dll
+          name: PrismaPhotoMode
           path: |
-            build-clang/windows/x64/release/PrismaPhotoMode.dll
+            PrismaPhotoMode.zip
             build-clang/windows/x64/release/BUILD_PROVENANCE.txt
           if-no-files-found: error

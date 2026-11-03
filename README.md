@@ -4,6 +4,12 @@ PrismaPhotoMode is a Fallout 4 F4SE plugin that adds a photo mode with a PrismaU
 
 Based on PhotoModeF4 by powerof3 (MIT). See `THIRD_PARTY_NOTICES`.
 
+## Installation
+
+Install the F4SE version and Address Library data matching your Fallout 4 runtime, and install PrismaUI_F4 with the V10 API. The pinned framework revision is listed in `deps/prisma-ui-framework.ref`.
+
+Download the `PrismaPhotoMode` CI artifact from a successful run and extract `PrismaPhotoMode.zip` with a mod manager, or copy its contents into the game's `Data` directory. The archive contains the DLL and INI under `F4SE/Plugins` and the panel under `PrismaUI_F4/views/PrismaPhotoMode`. Start the game through F4SE.
+
 ## What it does
 
 - A hotkey (default F9) enters and leaves photo mode in gameplay only.
@@ -27,7 +33,7 @@ Based on PhotoModeF4 by powerof3 (MIT). See `THIRD_PARTY_NOTICES`.
 
 ## Status
 
-- Not tested in game. The plugin has not been built or run on a game install.
+- The Windows DLL is built in CI. It has not been tested on a game install.
 - Supported runtimes: Fallout 4 1.10.163 (OG) and 1.11.137 or later (AE). The 1.10.984 (NG) runtime is rejected until its ids are verified, so photo mode stays off there.
 - Mouse passthrough while the panel is unfocused is not implemented. Keyboard and mouse go to the panel while it has focus.
 
