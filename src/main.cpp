@@ -444,9 +444,11 @@ F4SE_PLUGIN_VERSION = []() noexcept {
     v.PluginVersion({ 1, 0, 0, 0 });
     v.PluginName(kPluginName);
     v.AuthorName("NomadsReach");
+    v.UsesAddressLibraryNG(true);
     v.UsesAddressLibrary(true);
     v.UsesSigScanning(false);
     v.IsLayoutDependent(true);
+    v.IsLayoutDependentNG(true);
     v.HasNoStructUse(false);
     return v;
 }();
@@ -477,7 +479,13 @@ extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Query(const F4SE::QueryInterface* f
 
 extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Load(const F4SE::LoadInterface* f4se)
 {
-    if (g_runtimeFamily == PPM::RuntimeSupport::Family::Unsupported) return false;
+    if (g_runtimeFamily == PPM::RuntimeSupport::Family::Unsupported) SetupLogging();
+    g_runtimeVersion = f4se->RuntimeVersion();
+    g_runtimeFamily = PPM::RuntimeSupport::Classify(g_runtimeVersion);
+    if (g_runtimeFamily == PPM::RuntimeSupport::Family::Unsupported || f4se->IsEditor()) {
+        spdlog::error("PrismaPhotoMode: unsupported Fallout runtime {} or editor", g_runtimeVersion.string());
+        return false;
+    }
     F4SE::Init(f4se, F4SE::InitInfo{ .log = false, .trampoline = true, .trampolineSize = kTrampolineSize });
     auto* messaging = F4SE::GetMessagingInterface();
     if (!messaging) return false;

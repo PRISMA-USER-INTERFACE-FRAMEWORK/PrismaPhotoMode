@@ -78,7 +78,7 @@ for path in sorted(src.glob("*.cpp")) + sorted(src.glob("*.h")):
         continue
     assert "RE::ID::" not in path.read_text(encoding="utf-8"), f"{path.name} must reach engine ids through RuntimeSupport"
 
-for version in ("F4SE::RUNTIME_1_10_163", "F4SE::RUNTIME_1_11_137"):
+for version in ("F4SE::RUNTIME_1_10_163", "F4SE::RUNTIME_1_10_984", "F4SE::RUNTIME_1_11_137"):
     assert version in runtime, f"RuntimeSupport.cpp must classify {version}"
 
 assert "family == Family::NG" not in runtime, "RuntimeSupport.cpp must not reject NG"
@@ -175,6 +175,11 @@ for mapping_name, kind in mapping_kinds:
 assert {name for name, _ in mapping_kinds} == set(FUNCTION_MAPPINGS) | set(GLOBAL_MAPPINGS), "every RuntimeSupport mapping must be pinned to a Kind"
 assert "enum class Family" in runtime_header
 assert "ValidateMappings" in main and "ValidateMappings(g_runtimeFamily)" in main
+load = main.split('F4SEAPI F4SEPlugin_Load(', 1)[1]
+load_guard = 'g_runtimeFamily == PPM::RuntimeSupport::Family::Unsupported || f4se->IsEditor()'
+assert load.index('f4se->RuntimeVersion()') < load.index(load_guard)
+assert load.index('RuntimeSupport::Classify(g_runtimeVersion)') < load.index(load_guard)
+assert 'v.UsesAddressLibraryNG(true)' in main and 'v.IsLayoutDependentNG(true)' in main
 assert "ValidateTimeMappings(g_runtimeFamily)" in main, "main.cpp must gate the time controls through ValidateTimeMappings"
 assert "ValidateDepthOfFieldMappings(g_runtimeFamily)" in main, "main.cpp must gate depth of field through ValidateDepthOfFieldMappings"
 assert "ValidateFilterMappings(g_runtimeFamily)" in main, "main.cpp must gate filters through ValidateFilterMappings"
