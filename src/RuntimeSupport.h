@@ -26,4 +26,6 @@ namespace PPM::RuntimeSupport
     [[nodiscard]] bool FiltersAvailable() noexcept;
     void ValidateCharacterMappings(Family family);
     [[nodiscard]] bool CharactersAvailable() noexcept;
+    void ValidateLightingMappings(Family family);
+    [[nodiscard]] bool LightingAvailable() noexcept;
 }

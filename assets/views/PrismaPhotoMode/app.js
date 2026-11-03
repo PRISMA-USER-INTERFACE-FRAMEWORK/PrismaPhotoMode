@@ -125,6 +125,7 @@
     $("filter-strength").value = 1;
     $("filter-strength-out").textContent = "1.00";
     command("filter|0");
+    command("lightreset|");
     applyEffects();
   }
 
@@ -178,6 +179,14 @@
     });
   }
 
+  const LIGHTING_CONTROLS = ["brightness", "saturation", "contrast", "lighting-reset-btn"];
+
+  function setLightingEnabled(enabled) {
+    LIGHTING_CONTROLS.forEach((id) => {
+      $(id).disabled = !enabled;
+    });
+  }
+
   function setWeatherOptions(weathers) {
     const select = $("weather-select");
     const current = select.value;
@@ -205,6 +214,10 @@
     if (typeof data.speed === "number") syncSlider("speed", "speed-out", data.speed, 2);
     if (typeof data.frozen === "boolean" && document.activeElement !== $("time-freeze")) $("time-freeze").checked = data.frozen;
     setTimeEnabled(Boolean(data.timeReady));
+    setLightingEnabled(Boolean(data.lightingReady));
+    if (typeof data.brightness === "number") syncSlider("brightness", "brightness-out", data.brightness, 2);
+    if (typeof data.saturation === "number") syncSlider("saturation", "saturation-out", data.saturation, 2);
+    if (typeof data.contrast === "number") syncSlider("contrast", "contrast-out", data.contrast, 2);
     if (typeof data.timeMult === "number") syncSlider("timemult", "timemult-out", data.timeMult, 2);
     if (typeof data.timescale === "number") syncSlider("timescale", "timescale-out", data.timescale, 0);
     if (typeof data.hour === "number") {
@@ -357,6 +370,19 @@
     $("filter-strength-out").textContent = Number(event.target.value).toFixed(2);
     command(`filterstrength|${event.target.value}`);
   });
+  $("brightness").addEventListener("input", (event) => {
+    $("brightness-out").textContent = Number(event.target.value).toFixed(2);
+    command(`brightness|${event.target.value}`);
+  });
+  $("saturation").addEventListener("input", (event) => {
+    $("saturation-out").textContent = Number(event.target.value).toFixed(2);
+    command(`saturation|${event.target.value}`);
+  });
+  $("contrast").addEventListener("input", (event) => {
+    $("contrast-out").textContent = Number(event.target.value).toFixed(2);
+    command(`contrast|${event.target.value}`);
+  });
+  $("lighting-reset-btn").addEventListener("click", () => command("lightreset|"));
   $("freeze-btn").addEventListener("click", () => command("pickfreeze|1"));
   $("release-btn").addEventListener("click", () => command("pickfreeze|0"));
   $("face-btn").addEventListener("click", () => command("face|1"));

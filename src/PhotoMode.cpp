@@ -12,6 +12,7 @@
 #include <RE/C/Console.h>
 #include <RE/C/ControlMap.h>
 #include <RE/H/HUDModeType.h>
+#include <RE/I/ImageSpaceManager.h>
 #include <RE/I/ImageSpaceModifierInstanceDOF.h>
 #include <RE/I/ImageSpaceModifierInstanceForm.h>
 #include <RE/M/Main.h>
@@ -193,6 +194,14 @@ namespace PPM::PhotoMode
             g_filterStrength = kDefaultFilterStrength;
         }
 
+        RE::ImageSpaceBaseData g_lighting{};
+
+        void ReleaseLighting()
+        {
+            if (!RuntimeSupport::LightingAvailable()) return;
+            if (auto* imgs = RE::ImageSpaceManager::GetSingleton()) imgs->overRideBaseData = nullptr;
+        }
+
         bool IsFreeCamera(RE::PlayerCamera* a_camera)
         {
             return a_camera->currentState && a_camera->currentState->id.get() == RE::CameraState::kFree;
@@ -289,6 +298,7 @@ namespace PPM::PhotoMode
         g_weatherForced = false;
         RE::SendHUDMessage::PushHUDMode(RE::HUDModeType(kHudMode));
         g_active = true;
+        ResetLighting();
         spdlog::info("PrismaPhotoMode: entered freeCamera={} fov={:.1f}", g_snapshot.freeCamera, g_snapshot.fov);
         return true;
     }
@@ -307,6 +317,7 @@ namespace PPM::PhotoMode
         RestoreTime();
         ResetDepthOfField();
         ResetFilter();
+        ReleaseLighting();
         ResetPicked();
         SetFOV(g_snapshot.fov);
         SetTranslateSpeed(g_snapshot.translateSpeed);
@@ -467,6 +478,45 @@ namespace PPM::PhotoMode
         if (!g_filter) return;
         RE::ImageSpaceModifierInstanceForm::Stop(g_filter);
         RE::ImageSpaceModifierInstanceForm::Trigger(g_filter, g_filterStrength, nullptr);
+    }
+
+    void ResetLighting()
+    {
+        if (!g_active || !RuntimeSupport::LightingAvailable()) return;
+        auto* imgs = RE::ImageSpaceManager::GetSingleton();
+        if (!imgs || !imgs->baseData) return;
+        g_lighting = *imgs->baseData;
+        imgs->overRideBaseData = &g_lighting;
+    }
+
+    void SetBrightness(float a_value)
+    {
+        if (g_active && RuntimeSupport::LightingAvailable()) g_lighting.cinematicData.brightness = a_value;
+    }
+
+    void SetSaturation(float a_value)
+    {
+        if (g_active && RuntimeSupport::LightingAvailable()) g_lighting.cinematicData.saturation = a_value;
+    }
+
+    void SetContrast(float a_value)
+    {
+        if (g_active && RuntimeSupport::LightingAvailable()) g_lighting.cinematicData.contrast = a_value;
+    }
+
+    float Brightness() noexcept
+    {
+        return g_lighting.cinematicData.brightness;
+    }
+
+    float Saturation() noexcept
+    {
+        return g_lighting.cinematicData.saturation;
+    }
+
+    float Contrast() noexcept
+    {
+        return g_lighting.cinematicData.contrast;
     }
 
     void SetPickedFrozen(bool a_on)

@@ -18,9 +18,10 @@ REQUIRED_IDS = (
     "weather-select", "weather-clear-btn", "panel-scale", "panel-scale-out",
     "fx-dof-toggle", "dof-distance", "dof-distance-out", "dof-strength", "dof-strength-out", "dof-range", "dof-range-out", "dof-auto",
     "filter-select", "filter-strength", "filter-strength-out",
+    "brightness", "brightness-out", "saturation", "saturation-out", "contrast", "contrast-out", "lighting-reset-btn",
     "pick-name", "freeze-btn", "release-btn", "face-btn", "idle-select", "idle-btn", "art-select", "art-btn", "shader-select", "shader-btn",
 )
-NATIVE_COMMANDS = ("fov", "speed", "focus", "screenshot", "reset", "exit", "freeze", "timemult", "hour", "timescale", "weather", "lists", "dof", "dofdist", "dofstrength", "dofrange", "autofocus", "filter", "filterstrength", "pick", "pickfreeze", "face", "idle", "art", "shader")
+NATIVE_COMMANDS = ("fov", "speed", "focus", "screenshot", "reset", "exit", "freeze", "timemult", "hour", "timescale", "weather", "lists", "dof", "dofdist", "dofstrength", "dofrange", "autofocus", "brightness", "saturation", "contrast", "lightreset", "filter", "filterstrength", "pick", "pickfreeze", "face", "idle", "art", "shader")
 KEPT_OVERLAYS = ("#fx-vignette", "#fx-tint", "#fx-grain", "#fx-frame", "#fx-letterbox")
 
 

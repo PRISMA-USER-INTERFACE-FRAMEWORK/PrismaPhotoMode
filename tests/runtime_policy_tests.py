@@ -65,6 +65,7 @@ for name in (
     "TESObjectREFR::ApplyEffectShader",
     "TESObjectREFR::GetHandle",
     "TESObjectREFR::GetDisplayFullName",
+    "ImageSpaceManager::Singleton",
 ):
     assert f'"{name}"' in runtime, f"RuntimeSupport.cpp must validate {name}"
 
@@ -109,6 +110,7 @@ for triple in (
     "652173, 2205201, 2205201",
     "1573130, 2201196, 2201196",
     "1212056, 2201126, 2201126",
+    "161743, 2712627, 2712627",
 ):
     assert re.search(rf"REL::VariantID k\w+\{{ {re.escape(triple)} \}}", runtime), f"RuntimeSupport.cpp must carry the verified NG id triple {triple}"
 
@@ -151,6 +153,7 @@ GLOBAL_MAPPINGS = (
     "TESDataHandler::Singleton",
     "Console::GetCurrentPickIndex",
     "Console::GetPickRefs",
+    "ImageSpaceManager::Singleton",
 )
 mapping_kinds = re.findall(r'Mapping\{ "([^"]+)", &\w+, Kind::(Function|Global) \}', runtime)
 assert mapping_kinds, "RuntimeSupport.cpp must declare Mapping entries with a Kind"
@@ -164,5 +167,6 @@ assert "ValidateTimeMappings(g_runtimeFamily)" in main, "main.cpp must gate the 
 assert "ValidateDepthOfFieldMappings(g_runtimeFamily)" in main, "main.cpp must gate depth of field through ValidateDepthOfFieldMappings"
 assert "ValidateFilterMappings(g_runtimeFamily)" in main, "main.cpp must gate filters through ValidateFilterMappings"
 assert "ValidateCharacterMappings(g_runtimeFamily)" in main, "main.cpp must gate characters through ValidateCharacterMappings"
+assert "ValidateLightingMappings(g_runtimeFamily)" in main, "main.cpp must gate lighting through ValidateLightingMappings"
 
 print("PrismaPhotoMode runtime and PrismaUI policy tests passed")

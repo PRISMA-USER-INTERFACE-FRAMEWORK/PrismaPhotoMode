@@ -59,6 +59,7 @@ namespace
     constexpr float kMinDofDistance = 50.0F;
     constexpr float kMaxDofDistance = 5000.0F;
     constexpr float kMaxDofRange = 5000.0F;
+    constexpr float kMaxLighting = 3.0F;
 
     struct Settings
     {
@@ -104,7 +105,7 @@ namespace
         const bool active = PPM::PhotoMode::Active();
         const bool focused = active && g_api->HasFocus(g_view);
         const auto json = std::format(
-            R"({{"active":{},"focused":{},"fov":{:.1f},"speed":{:.2f},"frozen":{},"timeMult":{:.2f},"hour":{:.2f},"timescale":{:.1f},"timeReady":{},"panelScale":{}}})",
+            R"({{"active":{},"focused":{},"fov":{:.1f},"speed":{:.2f},"frozen":{},"timeMult":{:.2f},"hour":{:.2f},"timescale":{:.1f},"timeReady":{},"panelScale":{},"lightingReady":{},"brightness":{:.2f},"saturation":{:.2f},"contrast":{:.2f}}})",
             active ? "true" : "false",
             focused ? "true" : "false",
             PPM::PhotoMode::CurrentFOV(),
@@ -114,7 +115,11 @@ namespace
             PPM::PhotoMode::GameHour(),
             PPM::PhotoMode::TimescaleMultiplier(),
             PPM::RuntimeSupport::TimeControlsAvailable() ? "true" : "false",
-            g_settings.panelScale);
+            g_settings.panelScale,
+            PPM::RuntimeSupport::LightingAvailable() ? "true" : "false",
+            PPM::PhotoMode::Brightness(),
+            PPM::PhotoMode::Saturation(),
+            PPM::PhotoMode::Contrast());
         g_api->InteropCall(g_view, kStateCallback, json.c_str());
     }
 
@@ -245,6 +250,15 @@ namespace
             if (ParseFloat(value, number)) PPM::PhotoMode::SetDepthOfFieldRange(std::clamp(number, 0.0F, kMaxDofRange));
         } else if (name == "autofocus") {
             PPM::PhotoMode::SetAutoFocus(value == "1");
+        } else if (name == "brightness") {
+            if (ParseFloat(value, number)) PPM::PhotoMode::SetBrightness(std::clamp(number, 0.0F, kMaxLighting));
+        } else if (name == "saturation") {
+            if (ParseFloat(value, number)) PPM::PhotoMode::SetSaturation(std::clamp(number, 0.0F, kMaxLighting));
+        } else if (name == "contrast") {
+            if (ParseFloat(value, number)) PPM::PhotoMode::SetContrast(std::clamp(number, 0.0F, kMaxLighting));
+        } else if (name == "lightreset") {
+            PPM::PhotoMode::ResetLighting();
+            PushState();
         } else if (name == "filter") {
             std::uint32_t id = 0;
             ParseUnsigned(value, id);
@@ -365,6 +379,7 @@ namespace
             PPM::RuntimeSupport::ValidateTimeMappings(g_runtimeFamily);
             PPM::RuntimeSupport::ValidateDepthOfFieldMappings(g_runtimeFamily);
             PPM::RuntimeSupport::ValidateFilterMappings(g_runtimeFamily);
+            PPM::RuntimeSupport::ValidateLightingMappings(g_runtimeFamily);
             PPM::RuntimeSupport::ValidateCharacterMappings(g_runtimeFamily);
             g_api = PRISMA_UI_API::RequestPluginAPI<PRISMA_UI_API::IVPrismaUI10>();
             if (!g_api) {

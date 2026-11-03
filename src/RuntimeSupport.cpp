@@ -58,6 +58,7 @@ namespace PPM::RuntimeSupport
         constexpr REL::VariantID kApplyEffectShader{ 652173, 2205201, 2205201 };
         constexpr REL::VariantID kGetHandle{ 1573130, 2201196, 2201196 };
         constexpr REL::VariantID kGetDisplayFullName{ 1212056, 2201126, 2201126 };
+        constexpr REL::VariantID kImageSpaceManagerSingleton{ 161743, 2712627, 2712627 };
 
         const std::array kCoreMappings{
             Mapping{ "PlayerCamera::ToggleFreeCameraMode", &kToggleFreeCameraMode, Kind::Function },
@@ -111,9 +112,14 @@ namespace PPM::RuntimeSupport
             Mapping{ "TESDataHandler::Singleton", &kTESDataHandlerSingleton, Kind::Global }
         };
 
+        const std::array kLightingMappings{
+            Mapping{ "ImageSpaceManager::Singleton", &kImageSpaceManagerSingleton, Kind::Global }
+        };
+
         bool g_depthOfFieldAvailable{ false };
         bool g_filtersAvailable{ false };
         bool g_charactersAvailable{ false };
+        bool g_lightingAvailable{ false };
 
         bool ResolveMappings(std::span<const Mapping> a_mappings, Family a_family)
         {
@@ -227,5 +233,15 @@ namespace PPM::RuntimeSupport
     bool CharactersAvailable() noexcept
     {
         return g_charactersAvailable;
+    }
+
+    void ValidateLightingMappings(Family a_family)
+    {
+        g_lightingAvailable = ResolveMappings(kLightingMappings, a_family);
+    }
+
+    bool LightingAvailable() noexcept
+    {
+        return g_lightingAvailable;
     }
 }

@@ -34,6 +34,14 @@ namespace PPM::PhotoMode
     void SetFilter(std::uint32_t a_formID);
     void SetFilterStrength(float a_strength);
 
+    void ResetLighting();
+    void SetBrightness(float a_value);
+    void SetSaturation(float a_value);
+    void SetContrast(float a_value);
+    [[nodiscard]] float Brightness() noexcept;
+    [[nodiscard]] float Saturation() noexcept;
+    [[nodiscard]] float Contrast() noexcept;
+
     void SetPickedFrozen(bool a_on);
     void FacePicked();
     void PlayIdleOnPick(std::uint32_t a_formID);
