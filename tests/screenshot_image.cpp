@@ -5,6 +5,7 @@
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <vector>
 
 int main()
 {
@@ -77,6 +78,44 @@ int main()
         if (redScale - greenScale > 460 || greenScale - redScale > 460) break;
         if (secondRow[0] != first[0] || secondRow[1] != first[1] || secondRow[2] != first[2]) break;
         if (PPM::Screenshot::Composite(*capture.GetImage(0, 0, 0), std::wstring(framePath) + L".missing", result)) break;
+
+        constexpr UINT width = 1920;
+        constexpr UINT height = 1080;
+        descriptor.Width = width;
+        descriptor.Height = height;
+        std::vector<std::uint8_t> scene(static_cast<std::size_t>(width) * height * 4);
+        for (std::size_t i = 0; i < scene.size(); i += 4) {
+            scene[i] = 10; scene[i + 1] = 20; scene[i + 2] = 30; scene[i + 3] = 255;
+        }
+        data.pSysMem = scene.data();
+        data.SysMemPitch = width * 4;
+        texture.Reset();
+        if (FAILED(device->CreateTexture2D(&descriptor, &data, texture.GetAddressOf()))) break;
+        capture.Release();
+        if (FAILED(DirectX::CaptureTexture(device.Get(), context.Get(), texture.Get(), capture))) break;
+        if (!capture.GetImage(0, 0, 0) || capture.GetImage(0, 0, 0)->width != width ||
+            capture.GetImage(0, 0, 0)->height != height) break;
+        const std::filesystem::path bundledFrame("assets/views/PrismaPhotoMode/overlays/frames/Fallout/vault_111.png");
+        DirectX::ScratchImage decodedFrame;
+        if (FAILED(DirectX::LoadFromWICFile(bundledFrame.c_str(), DirectX::WIC_FLAGS_FORCE_RGB | DirectX::WIC_FLAGS_IGNORE_SRGB,
+                                            nullptr, decodedFrame))) break;
+        const auto* actualFrame = decodedFrame.GetImage(0, 0, 0);
+        if (!actualFrame || actualFrame->width != width || actualFrame->height != height ||
+            actualFrame->format != DXGI_FORMAT_R8G8B8A8_UNORM) break;
+        const auto* frameCorner = actualFrame->pixels;
+        const auto* frameCenter = actualFrame->pixels + (height / 2) * actualFrame->rowPitch + (width / 2) * 4;
+        if (frameCorner[3] != 255 || frameCenter[3] != 0) break;
+        if (!PPM::Screenshot::Composite(*capture.GetImage(0, 0, 0), bundledFrame, result)) break;
+        if (FAILED(DirectX::SaveToWICFile(*result.GetImage(0, 0, 0), DirectX::WIC_FLAGS_FORCE_SRGB,
+                                         DirectX::GetWICCodec(DirectX::WIC_CODEC_PNG), resultPath))) break;
+        if (FAILED(DirectX::LoadFromWICFile(resultPath, DirectX::WIC_FLAGS_FORCE_RGB | DirectX::WIC_FLAGS_IGNORE_SRGB,
+                                            nullptr, reloaded))) break;
+        image = reloaded.GetImage(0, 0, 0);
+        if (!image || image->width != width || image->height != height || image->format != DXGI_FORMAT_R8G8B8A8_UNORM) break;
+        const auto* savedCorner = image->pixels;
+        const auto* savedCenter = image->pixels + (height / 2) * image->rowPitch + (width / 2) * 4;
+        if (savedCorner[0] != frameCorner[0] || savedCorner[1] != frameCorner[1] || savedCorner[2] != frameCorner[2]) break;
+        if (savedCenter[0] != 10 || savedCenter[1] != 20 || savedCenter[2] != 30 || savedCenter[3] != 255) break;
         status = 0;
     } while (false);
     DeleteFileW(framePath);
