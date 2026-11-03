@@ -1,4 +1,5 @@
 #include "Screenshot.h"
+#include "ScreenshotHook.h"
 
 #include <RE/B/BSGraphics.h>
 #include <RE/M/MenuControls.h>
@@ -33,6 +34,8 @@ namespace PPM::Screenshot
     {
         constexpr REL::VariantID kSwap{ 1075087, 2228913, 2228913 };
         constexpr REL::VariantID kSave{ 919230, 2229158, 2229158 };
+        constexpr REL::VariantID kTargetWriter{ 1216468, 2277214, 2277214 };
+        constexpr REL::VariantID kRendererWriter{ 1431452, 2277002, 2277002 };
         constexpr std::size_t kOGCallOffset = 0x2E3;
         constexpr std::size_t kNGCallOffset = 0x2C6;
         constexpr std::size_t kOGTargetMapOffset = 0xDC4;
@@ -173,15 +176,14 @@ namespace PPM::Screenshot
         const auto swap = kSwap.address();
         const auto expected = kSave.address();
         const auto offset = family == RuntimeSupport::Family::OG ? kOGCallOffset : kNGCallOffset;
-        if (!start || end <= start || swap < start || swap >= end || expected < start || expected >= end ||
-            offset > end - swap || end - swap - offset < 5) return;
+        if (!InText(swap, offset + 5, start, end) || !InText(expected, 1, start, end) ||
+            !BranchMatches(swap + offset, 0xE8, expected, start, end) ||
+            !LayoutMatches(expected, kTargetWriter.address(), kRendererWriter.address(),
+                           family == RuntimeSupport::Family::OG, start, end)) {
+            spdlog::warn("PrismaPhotoMode: screenshot hook or render-target layout did not match; framed capture disabled");
+            return;
+        }
         const auto site = swap + offset;
-        const auto* code = reinterpret_cast<const std::uint8_t*>(site);
-        if (code[0] != 0xE8) return;
-        std::int32_t displacement = 0;
-        std::memcpy(&displacement, code + 1, sizeof(displacement));
-        const auto actual = site + 5 + static_cast<std::intptr_t>(displacement);
-        if (actual != expected) return;
         g_family = family;
         g_original = reinterpret_cast<SaveFunction>(expected);
         REL::GetTrampoline().write_call<5>(site, &SaveThunk);

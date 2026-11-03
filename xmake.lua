@@ -81,3 +81,12 @@ target("ScreenshotImageTest")
     add_includedirs("src")
     add_syslinks("d3d11", "windowscodecs", "ole32")
     set_targetdir("$(builddir)/windows/x64/$(mode)")
+
+
+target("ScreenshotHookTest")
+    set_kind("binary")
+    set_runtimes("MD")
+    set_default(false)
+    add_files("tests/screenshot_hook.cpp")
+    add_includedirs("src")
+    set_targetdir("$(builddir)/windows/x64/$(mode)")

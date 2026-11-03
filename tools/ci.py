@@ -59,6 +59,8 @@ elif stage == "dll":
     subprocess.run(["xmake", "build", "-y", "PrismaPhotoMode"], cwd=root, env=env, check=True)
     subprocess.run(["xmake", "build", "-y", "ScreenshotBlendTest"], cwd=root, env=env, check=True)
     subprocess.run([str(root / "build-clang/windows/x64/release/ScreenshotBlendTest.exe")], cwd=root, env=env, check=True)
+    subprocess.run(["xmake", "build", "-y", "ScreenshotHookTest"], cwd=root, env=env, check=True)
+    subprocess.run([str(root / "build-clang/windows/x64/release/ScreenshotHookTest.exe")], cwd=root, env=env, check=True)
     subprocess.run(["xmake", "build", "-y", "ScreenshotImageTest"], cwd=root, env=env, check=True)
     subprocess.run([str(root / "build-clang/windows/x64/release/ScreenshotImageTest.exe")], cwd=root, env=env, check=True)
     dll = root / "build-clang/windows/x64/release/PrismaPhotoMode.dll"
