@@ -576,7 +576,7 @@ namespace PPM::PhotoMode
     {
         if (!g_active || !RuntimeSupport::LightingAvailable()) return;
         auto* imgs = RE::ImageSpaceManager::GetSingleton();
-        if (!imgs || !imgs->baseData) return;
+        if (!imgs || !imgs->baseData || (imgs->overRideBaseData && imgs->overRideBaseData != &g_lighting)) return;
         g_lighting = *imgs->baseData;
         imgs->overRideBaseData = &g_lighting;
     }
