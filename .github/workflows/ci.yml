@@ -82,6 +82,7 @@ jobs:
           Copy-Item build-clang/windows/x64/release/PrismaPhotoMode.dll package/F4SE/Plugins/
           Copy-Item config/PrismaPhotoMode.ini package/F4SE/Plugins/
           Copy-Item -Recurse assets/views/PrismaPhotoMode package/PrismaUI_F4/views/
+          Copy-Item -Recurse MCM package/MCM
           Copy-Item THIRD_PARTY_NOTICES package/THIRD_PARTY_NOTICES.txt
           Compress-Archive -Path package/* -DestinationPath PrismaPhotoMode.zip
 

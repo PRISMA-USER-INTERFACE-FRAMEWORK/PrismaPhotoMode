@@ -20,6 +20,7 @@
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
+#include <array>
 #include <charconv>
 #include <cmath>
 #include <cstdint>
@@ -36,6 +37,7 @@ namespace
     constexpr char kPluginName[] = "PrismaPhotoMode";
     constexpr char kViewPath[] = "PrismaPhotoMode/index.html";
     constexpr char kIniPath[] = "Data\\F4SE\\Plugins\\PrismaPhotoMode.ini";
+    constexpr char kMcmIniPath[] = "Data\\MCM\\Settings\\PrismaPhotoMode.ini";
     constexpr char kCommandListener[] = "pm_command";
     constexpr char kStateCallback[] = "pmSetState";
     constexpr char kListsCallback[] = "pmSetLists";
@@ -54,6 +56,14 @@ namespace
     constexpr std::uint32_t kDefaultToggleKey = 0x78;
     constexpr std::uint32_t kDefaultFocusKey = 0x09;
     constexpr std::uint32_t kDefaultFocusPadButton = 0x10020;
+    constexpr std::array kFocusPadButtons{
+        static_cast<RE::BS_BUTTON_CODE>(0), RE::BS_BUTTON_CODE::kDPAD_Up, RE::BS_BUTTON_CODE::kDPAD_Down,
+        RE::BS_BUTTON_CODE::kDPAD_Left, RE::BS_BUTTON_CODE::kDPAD_Right, RE::BS_BUTTON_CODE::kStart,
+        RE::BS_BUTTON_CODE::kBack, RE::BS_BUTTON_CODE::kLStick, RE::BS_BUTTON_CODE::kRStick,
+        RE::BS_BUTTON_CODE::kLShoulder, RE::BS_BUTTON_CODE::kRShoulder, RE::BS_BUTTON_CODE::kAButton,
+        RE::BS_BUTTON_CODE::kBButton, RE::BS_BUTTON_CODE::kXButton, RE::BS_BUTTON_CODE::kYButton,
+        RE::BS_BUTTON_CODE::kLTrigger, RE::BS_BUTTON_CODE::kRTrigger
+    };
     constexpr int kDefaultPanelScale = 100;
     constexpr int kMinPanelScale = 50;
     constexpr int kMaxPanelScale = 200;
@@ -91,8 +101,15 @@ namespace
         g_settings.toggleKey = ReadKey("ToggleKey", kDefaultToggleKey);
         g_settings.focusKey = ReadKey("FocusKey", kDefaultFocusKey);
         g_settings.focusPadButton = GetPrivateProfileIntA("General", "FocusPadButton", static_cast<int>(kDefaultFocusPadButton), kIniPath);
+        const auto toggleKey = GetPrivateProfileIntA("General", "iToggleKey", static_cast<int>(g_settings.toggleKey), kMcmIniPath);
+        const auto focusKey = GetPrivateProfileIntA("General", "iFocusKey", static_cast<int>(g_settings.focusKey), kMcmIniPath);
+        if (toggleKey > 0 && toggleKey < 256) g_settings.toggleKey = toggleKey;
+        if (focusKey > 0 && focusKey < 256) g_settings.focusKey = focusKey;
+        const auto focusPadIndex = GetPrivateProfileIntA("General", "iFocusPadButton", -1, kMcmIniPath);
+        if (focusPadIndex < kFocusPadButtons.size()) g_settings.focusPadButton = static_cast<std::uint32_t>(kFocusPadButtons[focusPadIndex]);
         g_settings.panelScale = std::clamp(
-            static_cast<int>(GetPrivateProfileIntA("General", "PanelScale", kDefaultPanelScale, kIniPath)),
+            static_cast<int>(GetPrivateProfileIntA("General", "iPanelScale",
+                GetPrivateProfileIntA("General", "PanelScale", kDefaultPanelScale, kIniPath), kMcmIniPath)),
             kMinPanelScale,
             kMaxPanelScale);
     }
@@ -365,8 +382,9 @@ namespace
     class PhotoModeMenuWatcher final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
     {
     public:
-        RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent&, RE::BSTEventSource<RE::MenuOpenCloseEvent>*) override
+        RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent& a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>*) override
         {
+            if (!a_event.opening && a_event.menuName == "PauseMenu") LoadSettings();
             if (PPM::PhotoMode::Active() && !PPM::PhotoMode::InGameplayContext()) ExitMode();
             return RE::BSEventNotifyControl::kContinue;
         }
