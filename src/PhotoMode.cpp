@@ -21,6 +21,7 @@
 #include <RE/S/Setting.h>
 #include <RE/S/Sky.h>
 #include <RE/T/TESDataHandler.h>
+#include <RE/T/TESFormUtil.h>
 #include <RE/T/TESEffectShader.h>
 #include <RE/T/TESIdleForm.h>
 #include <RE/T/TESImageSpaceModifier.h>
