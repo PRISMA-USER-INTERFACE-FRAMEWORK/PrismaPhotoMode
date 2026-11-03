@@ -275,6 +275,10 @@ namespace
             std::uint32_t id = 0;
             ParseUnsigned(value, id);
             PPM::PhotoMode::PlayIdleOnPick(id);
+        } else if (name == "playeridle") {
+            std::uint32_t id = 0;
+            ParseUnsigned(value, id);
+            PPM::PhotoMode::PlayIdleOnPlayer(id);
         } else if (name == "art") {
             std::uint32_t id = 0;
             ParseUnsigned(value, id);

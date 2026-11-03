@@ -177,6 +177,15 @@ namespace PPM::PhotoMode
             if (actor && actor->currentProcess) actor->currentProcess->StopCurrentIdle(actor, true, false);
         }
 
+        void PlayIdleOn(RE::Actor* a_actor, std::uint32_t a_formID)
+        {
+            auto* idle = FindForm<RE::TESIdleForm>(a_formID);
+            if (!a_actor || !idle || !a_actor->currentProcess) return;
+            StopIdled();
+            a_actor->currentProcess->PlayIdle(*a_actor, idle, nullptr);
+            g_idled = a_actor->GetHandle();
+        }
+
         void ResetPicked()
         {
             ReleaseFrozen();
@@ -566,10 +575,13 @@ namespace PPM::PhotoMode
         if (!RuntimeSupport::CharactersAvailable()) return;
         const auto ref = PickedRef();
         auto* actor = ref ? ref->As<RE::Actor>() : nullptr;
-        auto* idle = FindForm<RE::TESIdleForm>(a_formID);
-        if (!actor || !idle || !actor->currentProcess) return;
-        actor->currentProcess->PlayIdle(*actor, idle, nullptr);
-        g_idled = actor->GetHandle();
+        PlayIdleOn(ref ? actor : RE::PlayerCharacter::GetSingleton(), a_formID);
+    }
+
+    void PlayIdleOnPlayer(std::uint32_t a_formID)
+    {
+        if (!RuntimeSupport::CharactersAvailable()) return;
+        PlayIdleOn(RE::PlayerCharacter::GetSingleton(), a_formID);
     }
 
     void ApplyArtToPick(std::uint32_t a_formID)

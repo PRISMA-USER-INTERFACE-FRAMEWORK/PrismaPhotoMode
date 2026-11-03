@@ -20,7 +20,7 @@
   ];
 
   const $ = (id) => document.getElementById(id);
-  const state = { focused: false, shooting: false, active: false, panelScaleDefault: 100 };
+  const state = { focused: false, shooting: false, active: false, panelScaleDefault: 100, idles: [] };
 
   function nativeCall(name, arg = "") {
     const fn = window[name];
@@ -298,6 +298,29 @@
     select.value = current;
   }
 
+  function idleCategory(item) {
+    const name = item.name || "";
+    const underscore = name.indexOf("_");
+    return underscore > 0 ? name.slice(0, underscore) : "Other";
+  }
+
+  function fillIdleCategories() {
+    const select = $("idle-category");
+    const current = select.value;
+    const names = [...new Set(state.idles.map(idleCategory))].sort();
+    select.textContent = "";
+    select.add(new Option("All", ""));
+    names.forEach((name) => select.add(new Option(name, name)));
+    select.value = names.includes(current) ? current : "";
+    fillIdleSelect();
+  }
+
+  function fillIdleSelect() {
+    const category = $("idle-category").value;
+    const items = category ? state.idles.filter((item) => idleCategory(item) === category) : state.idles;
+    fillSelect($("idle-select"), items);
+  }
+
   window.pmSetFilters = (payload) => {
     let data;
     try {
@@ -317,7 +340,8 @@
       console.error("pmSetCharacters: bad payload", error);
       return;
     }
-    fillSelect($("idle-select"), Array.isArray(data.idles) ? data.idles : []);
+    state.idles = Array.isArray(data.idles) ? data.idles : [];
+    fillIdleCategories();
     fillSelect($("art-select"), Array.isArray(data.arts) ? data.arts : []);
     fillSelect($("shader-select"), Array.isArray(data.shaders) ? data.shaders : []);
   };
@@ -398,7 +422,11 @@
   $("release-btn").addEventListener("click", () => command("pickfreeze|0"));
   $("show-player").addEventListener("change", (event) => command(`showplayer|${event.target.checked ? 1 : 0}`));
   $("face-btn").addEventListener("click", () => command("face|1"));
-  $("idle-btn").addEventListener("click", () => command(`idle|${$("idle-select").value || 0}`));
+  $("idle-category").addEventListener("change", fillIdleSelect);
+  $("idle-btn").addEventListener("click", () => {
+    const verb = $("idle-target").value === "player" ? "playeridle" : "idle";
+    command(`${verb}|${$("idle-select").value || 0}`);
+  });
   $("art-btn").addEventListener("click", () => command(`art|${$("art-select").value || 0}`));
   $("shader-btn").addEventListener("click", () => command(`shader|${$("shader-select").value || 0}`));
   $("weather-clear-btn").addEventListener("click", () => {

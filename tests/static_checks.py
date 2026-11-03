@@ -20,9 +20,9 @@ REQUIRED_IDS = (
     "filter-select", "filter-strength", "filter-strength-out",
     "brightness", "brightness-out", "saturation", "saturation-out", "contrast", "contrast-out", "lighting-reset-btn",
     "show-player",
-    "pick-name", "freeze-btn", "release-btn", "face-btn", "idle-select", "idle-btn", "art-select", "art-btn", "shader-select", "shader-btn",
+    "pick-name", "freeze-btn", "release-btn", "face-btn", "idle-target", "idle-category", "idle-select", "idle-btn", "art-select", "art-btn", "shader-select", "shader-btn",
 )
-NATIVE_COMMANDS = ("fov", "speed", "focus", "screenshot", "reset", "exit", "freeze", "timemult", "hour", "timescale", "weather", "lists", "dof", "dofdist", "dofstrength", "dofrange", "autofocus", "brightness", "saturation", "contrast", "lightreset", "showplayer", "filter", "filterstrength", "pick", "pickfreeze", "face", "idle", "art", "shader")
+NATIVE_COMMANDS = ("fov", "speed", "focus", "screenshot", "reset", "exit", "freeze", "timemult", "hour", "timescale", "weather", "lists", "dof", "dofdist", "dofstrength", "dofrange", "autofocus", "brightness", "saturation", "contrast", "lightreset", "showplayer", "filter", "filterstrength", "pick", "pickfreeze", "face", "idle", "playeridle", "art", "shader")
 KEPT_OVERLAYS = ("#fx-vignette", "#fx-tint", "#fx-grain", "#fx-frame", "#fx-letterbox")
 
 
