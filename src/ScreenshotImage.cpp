@@ -15,6 +15,22 @@ namespace PPM::Screenshot
         }
     }
 
+    bool CaptureFramed(ID3D11Device* device, ID3D11DeviceContext* context, ID3D11Resource* texture, const std::filesystem::path& frame, DirectX::ScratchImage& result)
+    {
+        if (!device || !context || !texture) return false;
+        DirectX::ScratchImage capture;
+        if (FAILED(DirectX::CaptureTexture(device, context, texture, capture))) return false;
+        const auto* image = capture.GetImage(0, 0, 0);
+        return image && Composite(*image, frame, result);
+    }
+
+    bool SavePNG(const DirectX::ScratchImage& image, const std::filesystem::path& path)
+    {
+        const auto* pixels = image.GetImage(0, 0, 0);
+        return pixels && SUCCEEDED(DirectX::SaveToWICFile(*pixels, DirectX::WIC_FLAGS_FORCE_SRGB,
+                                  DirectX::GetWICCodec(DirectX::WIC_CODEC_PNG), path.c_str()));
+    }
+
     bool Composite(const DirectX::Image& captured, const std::filesystem::path& frame, DirectX::ScratchImage& result)
     {
         if (!captured.width || !captured.height || !ToRGBA(captured, result)) return false;

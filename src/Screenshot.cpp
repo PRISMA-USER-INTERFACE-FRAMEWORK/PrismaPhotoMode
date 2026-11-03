@@ -112,16 +112,10 @@ namespace PPM::Screenshot
             } scope{ SUCCEEDED(com) };
             bool saved = false;
             do {
-                DirectX::ScratchImage capture;
-                if (FAILED(DirectX::CaptureTexture(reinterpret_cast<ID3D11Device*>(renderer->device),
-                        reinterpret_cast<ID3D11DeviceContext*>(renderer->context),
-                        reinterpret_cast<ID3D11Resource*>(renderer->renderTargets[physical].texture), capture))) break;
-                const auto* captured = capture.GetImage(0, 0, 0);
-                if (!captured || !captured->width || !captured->height) break;
                 DirectX::ScratchImage composed;
-                if (!Composite(*captured, frame, composed)) break;
-                const auto* background = composed.GetImage(0, 0, 0);
-                if (!background) break;
+                if (!CaptureFramed(reinterpret_cast<ID3D11Device*>(renderer->device),
+                        reinterpret_cast<ID3D11DeviceContext*>(renderer->context),
+                        reinterpret_cast<ID3D11Resource*>(renderer->renderTargets[physical].texture), frame, composed)) break;
                 PWSTR documents = nullptr;
                 if (FAILED(SHGetKnownFolderPath(FOLDERID_Documents, KF_FLAG_DEFAULT, nullptr, &documents))) break;
                 const std::unique_ptr<wchar_t, decltype(&CoTaskMemFree)> documentsOwner(documents, CoTaskMemFree);
@@ -136,8 +130,7 @@ namespace PPM::Screenshot
                 const HANDLE file = CreateFileW(path.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
                 if (file == INVALID_HANDLE_VALUE) break;
                 CloseHandle(file);
-                saved = SUCCEEDED(DirectX::SaveToWICFile(*background, DirectX::WIC_FLAGS_FORCE_SRGB,
-                                  DirectX::GetWICCodec(DirectX::WIC_CODEC_PNG), path.c_str()));
+                saved = SavePNG(composed, path);
                 if (!saved) std::filesystem::remove(path, error);
                 else spdlog::info("PrismaPhotoMode: saved framed screenshot {}", path.string());
             } while (false);

@@ -54,14 +54,11 @@ int main()
         data.SysMemPitch = 16;
         Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
         if (FAILED(device->CreateTexture2D(&descriptor, &data, texture.GetAddressOf()))) break;
-        DirectX::ScratchImage capture;
-        if (FAILED(DirectX::CaptureTexture(device.Get(), context.Get(), texture.Get(), capture))) break;
         DirectX::ScratchImage result;
-        if (!PPM::Screenshot::Composite(*capture.GetImage(0, 0, 0), framePath, result)) break;
+        if (!PPM::Screenshot::CaptureFramed(device.Get(), context.Get(), texture.Get(), framePath, result)) break;
         const auto* image = result.GetImage(0, 0, 0);
         if (!image || image->width != 4 || image->height != 2) break;
-        if (FAILED(DirectX::SaveToWICFile(*image, DirectX::WIC_FLAGS_FORCE_SRGB,
-                                         DirectX::GetWICCodec(DirectX::WIC_CODEC_PNG), resultPath))) break;
+        if (!PPM::Screenshot::SavePNG(result, resultPath)) break;
         DirectX::ScratchImage reloaded;
         if (FAILED(DirectX::LoadFromWICFile(resultPath, DirectX::WIC_FLAGS_FORCE_RGB | DirectX::WIC_FLAGS_IGNORE_SRGB, nullptr, reloaded))) break;
         image = reloaded.GetImage(0, 0, 0);
@@ -77,7 +74,10 @@ int main()
         const int greenScale = (static_cast<int>(edge[1]) - 20) * 230;
         if (redScale - greenScale > 460 || greenScale - redScale > 460) break;
         if (secondRow[0] != first[0] || secondRow[1] != first[1] || secondRow[2] != first[2]) break;
-        if (PPM::Screenshot::Composite(*capture.GetImage(0, 0, 0), std::wstring(framePath) + L".missing", result)) break;
+        if (PPM::Screenshot::CaptureFramed(device.Get(), context.Get(), texture.Get(), std::wstring(framePath) + L".missing", result)) break;
+        if (PPM::Screenshot::CaptureFramed(nullptr, context.Get(), texture.Get(), framePath, result)) break;
+        DirectX::ScratchImage empty;
+        if (PPM::Screenshot::SavePNG(empty, resultPath)) break;
 
         constexpr UINT width = 1920;
         constexpr UINT height = 1080;
@@ -91,10 +91,6 @@ int main()
         data.SysMemPitch = width * 4;
         texture.Reset();
         if (FAILED(device->CreateTexture2D(&descriptor, &data, texture.GetAddressOf()))) break;
-        capture.Release();
-        if (FAILED(DirectX::CaptureTexture(device.Get(), context.Get(), texture.Get(), capture))) break;
-        if (!capture.GetImage(0, 0, 0) || capture.GetImage(0, 0, 0)->width != width ||
-            capture.GetImage(0, 0, 0)->height != height) break;
         const std::filesystem::path bundledFrame("assets/views/PrismaPhotoMode/overlays/frames/Fallout/vault_111.png");
         DirectX::ScratchImage decodedFrame;
         if (FAILED(DirectX::LoadFromWICFile(bundledFrame.c_str(), DirectX::WIC_FLAGS_FORCE_RGB | DirectX::WIC_FLAGS_IGNORE_SRGB,
@@ -105,9 +101,8 @@ int main()
         const auto* frameCorner = actualFrame->pixels;
         const auto* frameCenter = actualFrame->pixels + (height / 2) * actualFrame->rowPitch + (width / 2) * 4;
         if (frameCorner[3] != 255 || frameCenter[3] != 0) break;
-        if (!PPM::Screenshot::Composite(*capture.GetImage(0, 0, 0), bundledFrame, result)) break;
-        if (FAILED(DirectX::SaveToWICFile(*result.GetImage(0, 0, 0), DirectX::WIC_FLAGS_FORCE_SRGB,
-                                         DirectX::GetWICCodec(DirectX::WIC_CODEC_PNG), resultPath))) break;
+        if (!PPM::Screenshot::CaptureFramed(device.Get(), context.Get(), texture.Get(), bundledFrame, result)) break;
+        if (!PPM::Screenshot::SavePNG(result, resultPath)) break;
         if (FAILED(DirectX::LoadFromWICFile(resultPath, DirectX::WIC_FLAGS_FORCE_RGB | DirectX::WIC_FLAGS_IGNORE_SRGB,
                                             nullptr, reloaded))) break;
         image = reloaded.GetImage(0, 0, 0);
