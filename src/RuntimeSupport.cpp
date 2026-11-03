@@ -32,24 +32,36 @@ namespace PPM::RuntimeSupport
         constexpr REL::VariantID kSetCameraFOV{ 1348813, 2228973, 2228973 };
         constexpr REL::VariantID kPushHUDMode{ 1321764, 2222443, 2222443 };
         constexpr REL::VariantID kPopHUDMode{ 1495042, 2222444, 2222444 };
+        constexpr REL::VariantID kBGSSaveLoadManagerSingleton{ 1247320, 2697802, 2697802 };
+        constexpr REL::VariantID kUISingleton{ 548587, 2689028, 4796314 };
+        constexpr REL::VariantID kBSTimerSingleton{ 1256126, 2703179, 2703179 };
+        constexpr REL::VariantID kQGlobalTimeMultiplier{ 365546, 2666307, 2666307 };
+        constexpr REL::VariantID kSetGlobalTimeMultiplier{ 1419977, 2267970, 2267970 };
+        constexpr REL::VariantID kCalendarSingleton{ 1444952, 2689092, 4796378 };
+        constexpr REL::VariantID kSkySingleton{ 484694, 2192448, 2192448 };
+        constexpr REL::VariantID kForceWeather{ 698558, 2208861, 2208861 };
+        constexpr REL::VariantID kResetWeather{ 6511, 2208860, 2208860 };
+        constexpr REL::VariantID kTESDataHandlerSingleton{ 711558, 2688883, 4796135 };
 
         const std::array kCoreMappings{
             Mapping{ "PlayerCamera::ToggleFreeCameraMode", &kToggleFreeCameraMode, Kind::Function },
             Mapping{ "Main::SetCameraFOV", &kSetCameraFOV, Kind::Function },
             Mapping{ "SendHUDMessage::PushHUDMode", &kPushHUDMode, Kind::Function },
             Mapping{ "SendHUDMessage::PopHUDMode", &kPopHUDMode, Kind::Function },
-            Mapping{ "Main::Singleton", &kMainSingleton, Kind::Global }
+            Mapping{ "Main::Singleton", &kMainSingleton, Kind::Global },
+            Mapping{ "BGSSaveLoadManager::Singleton", &kBGSSaveLoadManagerSingleton, Kind::Global },
+            Mapping{ "UI::Singleton", &kUISingleton, Kind::Global }
         };
 
         const std::array kTimeMappings{
-            Mapping{ "BSTimer::Singleton", &RE::ID::BSTimer::Singleton, Kind::Global },
-            Mapping{ "BSTimer::QGlobalTimeMultiplier", &RE::ID::BSTimer::QGlobalTimeMultiplier, Kind::Global },
-            Mapping{ "BSTimer::SetGlobalTimeMultiplier", &RE::ID::BSTimer::SetGlobalTimeMultiplier, Kind::Function },
-            Mapping{ "Calendar::Singleton", &RE::ID::Calendar::Singleton, Kind::Global },
-            Mapping{ "Sky::Singleton", &RE::ID::Sky::Singleton, Kind::Global },
-            Mapping{ "Sky::ForceWeather", &RE::ID::Sky::ForceWeather, Kind::Function },
-            Mapping{ "Sky::ResetWeather", &RE::ID::Sky::ResetWeather, Kind::Function },
-            Mapping{ "TESDataHandler::Singleton", &RE::ID::TESDataHandler::Singleton, Kind::Global }
+            Mapping{ "BSTimer::Singleton", &kBSTimerSingleton, Kind::Global },
+            Mapping{ "BSTimer::QGlobalTimeMultiplier", &kQGlobalTimeMultiplier, Kind::Global },
+            Mapping{ "BSTimer::SetGlobalTimeMultiplier", &kSetGlobalTimeMultiplier, Kind::Function },
+            Mapping{ "Calendar::Singleton", &kCalendarSingleton, Kind::Global },
+            Mapping{ "Sky::Singleton", &kSkySingleton, Kind::Global },
+            Mapping{ "Sky::ForceWeather", &kForceWeather, Kind::Function },
+            Mapping{ "Sky::ResetWeather", &kResetWeather, Kind::Function },
+            Mapping{ "TESDataHandler::Singleton", &kTESDataHandlerSingleton, Kind::Global }
         };
 
         bool g_timeControlsAvailable{ false };
@@ -125,20 +137,11 @@ namespace PPM::RuntimeSupport
 
     bool ValidateMappings(Family family)
     {
-        if (family == Family::NG) {
-            spdlog::error("PrismaPhotoMode: NG 1.10.984 has no verified BGSSaveLoadManager id; photo mode disabled");
-            return false;
-        }
         return ResolveMappings(kCoreMappings, family);
     }
 
     void ValidateTimeMappings(Family family)
     {
-        if (family == Family::NG) {
-            spdlog::warn("PrismaPhotoMode: time controls disabled on NG; BSTimer, Sky, Calendar and TESDataHandler ids are not verified for 1.10.984");
-            g_timeControlsAvailable = false;
-            return;
-        }
         g_timeControlsAvailable = ResolveMappings(kTimeMappings, family);
     }
 

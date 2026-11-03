@@ -47,6 +47,8 @@ for name in (
     "Sky::ForceWeather",
     "Sky::ResetWeather",
     "TESDataHandler::Singleton",
+    "BGSSaveLoadManager::Singleton",
+    "UI::Singleton",
 ):
     assert f'"{name}"' in runtime, f"RuntimeSupport.cpp must validate {name}"
 
@@ -58,13 +60,23 @@ for path in sorted(src.glob("*.cpp")) + sorted(src.glob("*.h")):
 for version in ("F4SE::RUNTIME_1_10_163", "F4SE::RUNTIME_1_11_137"):
     assert version in runtime, f"RuntimeSupport.cpp must classify {version}"
 
-assert "no verified BGSSaveLoadManager id" in runtime, "RuntimeSupport.cpp must reject NG until BGSSaveLoadManager is verified"
+assert "family == Family::NG" not in runtime, "RuntimeSupport.cpp must not reject NG"
 for triple in (
     "756304, 2698043, 2698043",
     "224913, 2248368, 2248368",
     "1348813, 2228973, 2228973",
     "1321764, 2222443, 2222443",
     "1495042, 2222444, 2222444",
+    "1247320, 2697802, 2697802",
+    "548587, 2689028, 4796314",
+    "1256126, 2703179, 2703179",
+    "365546, 2666307, 2666307",
+    "1419977, 2267970, 2267970",
+    "1444952, 2689092, 4796378",
+    "484694, 2192448, 2192448",
+    "698558, 2208861, 2208861",
+    "6511, 2208860, 2208860",
+    "711558, 2688883, 4796135",
 ):
     assert re.search(rf"REL::VariantID k\w+\{{ {re.escape(triple)} \}}", runtime), f"RuntimeSupport.cpp must carry the verified NG id triple {triple}"
 
