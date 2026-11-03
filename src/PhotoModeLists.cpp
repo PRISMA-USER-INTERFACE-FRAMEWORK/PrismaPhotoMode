@@ -1,6 +1,9 @@
 #include "PhotoModeLists.h"
 
+#include <RE/B/BGSArtObject.h>
 #include <RE/T/TESDataHandler.h>
+#include <RE/T/TESEffectShader.h>
+#include <RE/T/TESIdleForm.h>
 #include <RE/T/TESImageSpaceModifier.h>
 #include <RE/T/TESWeather.h>
 
@@ -58,6 +61,18 @@ namespace PPM::PhotoModeLists
     std::string BuildFilters()
     {
         return std::string{ R"({"filters":)" } + FormArray<RE::TESImageSpaceModifier>() + "}";
+    }
+
+    std::string BuildCharacterForms()
+    {
+        return std::string{ R"({"idles":)" } + FormArray<RE::TESIdleForm>() + R"(,"arts":)" + FormArray<RE::BGSArtObject>() + R"(,"shaders":)" + FormArray<RE::TESEffectShader>() + "}";
+    }
+
+    std::string BuildPick(const char* a_name)
+    {
+        std::string json{ R"({"name":")" };
+        AppendEscaped(json, a_name ? a_name : "");
+        return json + "\"}";
     }
 
     std::string BuildOverlays()

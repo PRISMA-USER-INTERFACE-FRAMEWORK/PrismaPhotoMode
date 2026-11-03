@@ -31,4 +31,11 @@ namespace PPM::PhotoMode
 
     void SetFilter(std::uint32_t a_formID);
     void SetFilterStrength(float a_strength);
+
+    void SetPickedFrozen(bool a_on);
+    void FacePicked();
+    void PlayIdleOnPick(std::uint32_t a_formID);
+    void ApplyArtToPick(std::uint32_t a_formID);
+    void ApplyShaderToPick(std::uint32_t a_formID);
+    [[nodiscard]] const char* PickedName();
 }

@@ -36,6 +36,7 @@
       <button type="button" class="tab" data-tab="time" aria-selected="false">Time</button>
       <button type="button" class="tab" data-tab="overlays" aria-selected="false">Overlays</button>
       <button type="button" class="tab" data-tab="filters" aria-selected="false">Filters</button>
+      <button type="button" class="tab" data-tab="characters" aria-selected="false">Characters</button>
       <button type="button" class="tab" data-tab="access" aria-selected="false">Access</button>
     </nav>
 
@@ -156,6 +157,30 @@
         <label>Strength <output id="filter-strength-out">1.00</output>
           <input id="filter-strength" type="range" min="0" max="1" step="0.05" value="1">
         </label>
+      </section>
+    </div>
+
+    <div data-tab-panel="characters" hidden>
+      <section>
+        <h2>Characters</h2>
+        <p>Picked: <span id="pick-name">No reference picked</span></p>
+        <fieldset>
+          <button id="freeze-btn" type="button">Freeze</button>
+          <button id="release-btn" type="button">Release</button>
+          <button id="face-btn" type="button">Face camera</button>
+        </fieldset>
+        <label>Idle
+          <select id="idle-select"><option value="">None</option></select>
+        </label>
+        <button id="idle-btn" type="button">Play idle</button>
+        <label>Art object
+          <select id="art-select"><option value="">None</option></select>
+        </label>
+        <button id="art-btn" type="button">Apply art object</button>
+        <label>Effect shader
+          <select id="shader-select"><option value="">None</option></select>
+        </label>
+        <button id="shader-btn" type="button">Apply effect shader</button>
       </section>
     </div>
 

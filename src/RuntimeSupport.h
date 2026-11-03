@@ -24,4 +24,6 @@ namespace PPM::RuntimeSupport
     [[nodiscard]] bool DepthOfFieldAvailable() noexcept;
     void ValidateFilterMappings(Family family);
     [[nodiscard]] bool FiltersAvailable() noexcept;
+    void ValidateCharacterMappings(Family family);
+    [[nodiscard]] bool CharactersAvailable() noexcept;
 }

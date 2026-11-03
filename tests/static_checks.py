@@ -18,8 +18,9 @@ REQUIRED_IDS = (
     "weather-select", "weather-clear-btn", "panel-scale", "panel-scale-out",
     "fx-dof-toggle", "dof-distance", "dof-distance-out", "dof-auto",
     "filter-select", "filter-strength", "filter-strength-out",
+    "pick-name", "freeze-btn", "release-btn", "face-btn", "idle-select", "idle-btn", "art-select", "art-btn", "shader-select", "shader-btn",
 )
-NATIVE_COMMANDS = ("fov", "speed", "focus", "screenshot", "reset", "exit", "freeze", "timemult", "hour", "timescale", "weather", "lists", "dof", "dofdist", "autofocus", "filter", "filterstrength")
+NATIVE_COMMANDS = ("fov", "speed", "focus", "screenshot", "reset", "exit", "freeze", "timemult", "hour", "timescale", "weather", "lists", "dof", "dofdist", "autofocus", "filter", "filterstrength", "pick", "face", "idle", "art", "shader")
 KEPT_OVERLAYS = ("#fx-vignette", "#fx-tint", "#fx-grain", "#fx-frame", "#fx-letterbox")
 
 
@@ -62,6 +63,8 @@ def check(root: Path) -> None:
         raise SystemExit("app.js must expose window.pmSetLists")
     if "window.pmSetFilters" not in app:
         raise SystemExit("app.js must expose window.pmSetFilters")
+    if "window.pmSetCharacters" not in app or "window.pmSetPick" not in app:
+        raise SystemExit("app.js must expose window.pmSetCharacters and window.pmSetPick")
     if '"pm_command"' not in app:
         raise SystemExit("app.js must call the pm_command listener")
 
@@ -88,6 +91,8 @@ def check(root: Path) -> None:
         raise SystemExit("main.cpp listener and state names must match app.js")
     if 'kFiltersCallback[] = "pmSetFilters"' not in main:
         raise SystemExit("main.cpp filters callback name must match app.js")
+    if 'kCharactersCallback[] = "pmSetCharacters"' not in main or 'kPickCallback[] = "pmSetPick"' not in main:
+        raise SystemExit("main.cpp characters and pick callback names must match app.js")
 
 
 if __name__ == "__main__":

@@ -49,6 +49,15 @@ namespace PPM::RuntimeSupport
         constexpr REL::VariantID kGetPickRefs{ 875116, 2701391, 2701391 };
         constexpr REL::VariantID kFilterTrigger{ 179769, 2199906, 2199906 };
         constexpr REL::VariantID kFilterStop{ 217873, 2199909, 2199909 };
+        constexpr REL::VariantID kInitiateDoNothingPackage{ 89993, 2229807, 2229807 };
+        constexpr REL::VariantID kEndInterruptPackage{ 575188, 2229892, 2229892 };
+        constexpr REL::VariantID kSetHeading{ 353571, 2229625, 2229625 };
+        constexpr REL::VariantID kStopCurrentIdle{ 434460, 2231705, 2231705 };
+        constexpr REL::VariantID kSetupSpecialIdle{ 1446774, 2231704, 2231704 };
+        constexpr REL::VariantID kApplyArtObject{ 357908, 2205200, 2205200 };
+        constexpr REL::VariantID kApplyEffectShader{ 652173, 2205201, 2205201 };
+        constexpr REL::VariantID kGetHandle{ 1573130, 2201196, 2201196 };
+        constexpr REL::VariantID kGetDisplayFullName{ 1212056, 2201126, 2201126 };
 
         const std::array kCoreMappings{
             Mapping{ "PlayerCamera::ToggleFreeCameraMode", &kToggleFreeCameraMode, Kind::Function },
@@ -86,8 +95,25 @@ namespace PPM::RuntimeSupport
             Mapping{ "TESDataHandler::Singleton", &kTESDataHandlerSingleton, Kind::Global }
         };
 
+        const std::array kCharacterMappings{
+            Mapping{ "Actor::InitiateDoNothingPackage", &kInitiateDoNothingPackage, Kind::Function },
+            Mapping{ "Actor::EndInterruptPackage", &kEndInterruptPackage, Kind::Function },
+            Mapping{ "Actor::SetHeading", &kSetHeading, Kind::Function },
+            Mapping{ "AIProcess::StopCurrentIdle", &kStopCurrentIdle, Kind::Function },
+            Mapping{ "AIProcess::SetupSpecialIdle", &kSetupSpecialIdle, Kind::Function },
+            Mapping{ "TESObjectREFR::ApplyArtObject", &kApplyArtObject, Kind::Function },
+            Mapping{ "TESObjectREFR::ApplyEffectShader", &kApplyEffectShader, Kind::Function },
+            Mapping{ "TESObjectREFR::GetHandle", &kGetHandle, Kind::Function },
+            Mapping{ "TESObjectREFR::GetDisplayFullName", &kGetDisplayFullName, Kind::Function },
+            Mapping{ "PlayerCamera::GetCameraPosition", &kGetCameraPosition, Kind::Function },
+            Mapping{ "Console::GetCurrentPickIndex", &kGetCurrentPickIndex, Kind::Global },
+            Mapping{ "Console::GetPickRefs", &kGetPickRefs, Kind::Global },
+            Mapping{ "TESDataHandler::Singleton", &kTESDataHandlerSingleton, Kind::Global }
+        };
+
         bool g_depthOfFieldAvailable{ false };
         bool g_filtersAvailable{ false };
+        bool g_charactersAvailable{ false };
 
         bool ResolveMappings(std::span<const Mapping> a_mappings, Family a_family)
         {
@@ -191,5 +217,15 @@ namespace PPM::RuntimeSupport
     bool FiltersAvailable() noexcept
     {
         return g_filtersAvailable;
+    }
+
+    void ValidateCharacterMappings(Family a_family)
+    {
+        g_charactersAvailable = ResolveMappings(kCharacterMappings, a_family);
+    }
+
+    bool CharactersAvailable() noexcept
+    {
+        return g_charactersAvailable;
     }
 }

@@ -261,12 +261,11 @@
     setWeatherOptions(Array.isArray(data.weathers) ? data.weathers : []);
   };
 
-  function setFilterOptions(filters) {
-    const select = $("filter-select");
+  function fillSelect(select, items) {
     const current = select.value;
     select.textContent = "";
     select.add(new Option("None", ""));
-    filters.forEach((filter) => select.add(new Option(filter.name, String(filter.id))));
+    items.forEach((item) => select.add(new Option(item.name, String(item.id))));
     select.value = current;
   }
 
@@ -278,7 +277,31 @@
       console.error("pmSetFilters: bad payload", error);
       return;
     }
-    setFilterOptions(Array.isArray(data.filters) ? data.filters : []);
+    fillSelect($("filter-select"), Array.isArray(data.filters) ? data.filters : []);
+  };
+
+  window.pmSetCharacters = (payload) => {
+    let data;
+    try {
+      data = JSON.parse(payload);
+    } catch (error) {
+      console.error("pmSetCharacters: bad payload", error);
+      return;
+    }
+    fillSelect($("idle-select"), Array.isArray(data.idles) ? data.idles : []);
+    fillSelect($("art-select"), Array.isArray(data.arts) ? data.arts : []);
+    fillSelect($("shader-select"), Array.isArray(data.shaders) ? data.shaders : []);
+  };
+
+  window.pmSetPick = (payload) => {
+    let data;
+    try {
+      data = JSON.parse(payload);
+    } catch (error) {
+      console.error("pmSetPick: bad payload", error);
+      return;
+    }
+    $("pick-name").textContent = data.name || "No reference picked";
   };
 
   $("fov").addEventListener("input", (event) => {
@@ -327,6 +350,12 @@
     $("filter-strength-out").textContent = Number(event.target.value).toFixed(2);
     command(`filterstrength|${event.target.value}`);
   });
+  $("freeze-btn").addEventListener("click", () => command("freeze|1"));
+  $("release-btn").addEventListener("click", () => command("freeze|0"));
+  $("face-btn").addEventListener("click", () => command("face|1"));
+  $("idle-btn").addEventListener("click", () => command(`idle|${$("idle-select").value || 0}`));
+  $("art-btn").addEventListener("click", () => command(`art|${$("art-select").value || 0}`));
+  $("shader-btn").addEventListener("click", () => command(`shader|${$("shader-select").value || 0}`));
   $("weather-clear-btn").addEventListener("click", () => {
     $("weather-select").value = "";
     command("weather|0");
@@ -456,6 +485,7 @@
   $("dof-auto").addEventListener("change", (event) => command(`autofocus|${event.target.checked ? 1 : 0}`));
   setInterval(() => {
     if (state.active && $("dof-auto").checked) command("autofocus|1");
+    if (state.active && !document.querySelector('[data-tab-panel="characters"]').hidden) command("pick|1");
   }, 250);
 
   $("panel-scale").addEventListener("input", (event) => applyPanelScale(Number(event.target.value)));

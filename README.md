@@ -12,6 +12,7 @@ Based on PhotoModeF4 by powerof3 (MIT). See `THIRD_PARTY_NOTICES`.
 - The panel has a field-of-view slider, a camera speed slider, and buttons for focus, screenshot, reset and exit.
 - Depth of field has a focus distance slider. Auto focus follows the picked reference (the console pick) and uses the manual distance when nothing is picked.
 - The Filters tab applies a game image space modifier (chosen from a list) with a strength slider. Not verified in game.
+- The Characters tab acts on the console-picked reference: freeze and release, face the camera, play an idle, and apply an art object or effect shader. Not verified in game.
 - Visual effects are CSS overlays in the panel view: vignette, letterbox with an aspect picker, colour tint, film grain, frame, and a rule-of-thirds grid.
 - The screenshot action hides the panel and grid and keeps the overlays. Whether the engine screenshot captures the web overlays is not verified in game.
 

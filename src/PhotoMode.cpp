@@ -1,7 +1,11 @@
 #include "PhotoMode.h"
 #include "RuntimeSupport.h"
 
+#include <RE/A/Actor.h>
+#include <RE/A/AIProcess.h>
+#include <RE/B/BGSArtObject.h>
 #include <RE/B/BGSSaveLoadManager.h>
+#include <RE/B/BSPointerHandle.h>
 #include <RE/B/BSTimer.h>
 #include <RE/C/Calendar.h>
 #include <RE/C/CameraStates.h>
@@ -17,6 +21,8 @@
 #include <RE/S/Setting.h>
 #include <RE/S/Sky.h>
 #include <RE/T/TESDataHandler.h>
+#include <RE/T/TESEffectShader.h>
+#include <RE/T/TESIdleForm.h>
 #include <RE/T/TESImageSpaceModifier.h>
 #include <RE/T/TESWeather.h>
 #include <RE/U/UserEvents.h>
@@ -114,16 +120,24 @@ namespace PPM::PhotoMode
         RE::TESImageSpaceModifier* g_filter{ nullptr };
         float g_filterStrength{ kDefaultFilterStrength };
 
-        RE::TESImageSpaceModifier* FindModifier(std::uint32_t a_formID)
+        template <class T>
+        T* FindForm(std::uint32_t a_formID)
         {
-            if (!RuntimeSupport::FiltersAvailable() || !a_formID) return nullptr;
+            if (!a_formID) return nullptr;
             auto* handler = RE::TESDataHandler::GetSingleton();
             if (!handler) return nullptr;
-            for (auto* modifier : handler->GetFormArray<RE::TESImageSpaceModifier>()) {
-                if (modifier && modifier->GetFormID() == a_formID) return modifier;
+            for (auto* form : handler->GetFormArray<T>()) {
+                if (form && form->GetFormID() == a_formID) return form;
             }
             return nullptr;
         }
+
+        RE::NiPointer<RE::TESObjectREFR> PickedRef()
+        {
+            return RE::Console::GetCurrentPickREFR().get();
+        }
+
+        RE::ObjectRefHandle g_frozen{};
 
         void StopFilter()
         {
@@ -252,6 +266,7 @@ namespace PPM::PhotoMode
         RestoreTime();
         ResetDepthOfField();
         ResetFilter();
+        SetPickedFrozen(false);
         SetFOV(g_snapshot.fov);
         SetTranslateSpeed(g_snapshot.translateSpeed);
         RE::SendHUDMessage::PopHUDMode(RE::HUDModeType(kHudMode));
@@ -385,7 +400,7 @@ namespace PPM::PhotoMode
         if (!g_active || !RuntimeSupport::FiltersAvailable()) return;
         StopFilter();
         if (!a_formID) return;
-        g_filter = FindModifier(a_formID);
+        g_filter = FindForm<RE::TESImageSpaceModifier>(a_formID);
         if (!g_filter) {
             spdlog::warn("PrismaPhotoMode: image space modifier {:X} is not a known form", a_formID);
             return;
@@ -399,5 +414,69 @@ namespace PPM::PhotoMode
         if (!g_filter) return;
         RE::ImageSpaceModifierInstanceForm::Stop(g_filter);
         RE::ImageSpaceModifierInstanceForm::Trigger(g_filter, g_filterStrength, nullptr);
+    }
+
+    void SetPickedFrozen(bool a_on)
+    {
+        if (!RuntimeSupport::CharactersAvailable()) return;
+        if (a_on) {
+            const auto ref = PickedRef();
+            auto* actor = ref ? ref->As<RE::Actor>() : nullptr;
+            if (!actor) return;
+            actor->InitiateDoNothingPackage();
+            g_frozen = actor->GetHandle();
+            return;
+        }
+        const auto ref = g_frozen.get();
+        auto* actor = ref ? ref->As<RE::Actor>() : nullptr;
+        g_frozen = RE::ObjectRefHandle{};
+        if (!actor) return;
+        actor->EndInterruptPackage(false);
+        if (actor->currentProcess) actor->currentProcess->StopCurrentIdle(actor, true, false);
+    }
+
+    void FacePicked()
+    {
+        if (!RuntimeSupport::CharactersAvailable()) return;
+        const auto ref = PickedRef();
+        auto* actor = ref ? ref->As<RE::Actor>() : nullptr;
+        const auto* camera = RE::PlayerCamera::GetSingleton();
+        RE::NiPoint3 cameraPosition{};
+        if (!actor || !camera || !camera->GetCameraPosition(cameraPosition, true)) return;
+        const auto delta = cameraPosition - actor->GetPosition();
+        actor->SetHeading(std::atan2(delta.x, delta.y));
+    }
+
+    void PlayIdleOnPick(std::uint32_t a_formID)
+    {
+        if (!RuntimeSupport::CharactersAvailable()) return;
+        const auto ref = PickedRef();
+        auto* actor = ref ? ref->As<RE::Actor>() : nullptr;
+        auto* idle = FindForm<RE::TESIdleForm>(a_formID);
+        if (!actor || !idle || !actor->currentProcess) return;
+        actor->currentProcess->PlayIdle(*actor, idle, nullptr);
+    }
+
+    void ApplyArtToPick(std::uint32_t a_formID)
+    {
+        if (!RuntimeSupport::CharactersAvailable()) return;
+        const auto ref = PickedRef();
+        auto* art = FindForm<RE::BGSArtObject>(a_formID);
+        if (ref && art) ref->ApplyArtObject(art);
+    }
+
+    void ApplyShaderToPick(std::uint32_t a_formID)
+    {
+        if (!RuntimeSupport::CharactersAvailable()) return;
+        const auto ref = PickedRef();
+        auto* shader = FindForm<RE::TESEffectShader>(a_formID);
+        if (ref && shader) ref->ApplyEffectShader(shader);
+    }
+
+    const char* PickedName()
+    {
+        if (!RuntimeSupport::CharactersAvailable()) return nullptr;
+        const auto ref = PickedRef();
+        return ref ? ref->GetDisplayFullName() : nullptr;
     }
 }

@@ -40,6 +40,8 @@ namespace
     constexpr char kListsCallback[] = "pmSetLists";
     constexpr char kOverlaysCallback[] = "pmSetOverlays";
     constexpr char kFiltersCallback[] = "pmSetFilters";
+    constexpr char kCharactersCallback[] = "pmSetCharacters";
+    constexpr char kPickCallback[] = "pmSetPick";
     constexpr float kMinFOV = 5.0F;
     constexpr float kMaxFOV = 150.0F;
     constexpr float kMinSpeed = 0.1F;
@@ -136,6 +138,20 @@ namespace
         g_api->InteropCall(g_view, kFiltersCallback, json.c_str());
     }
 
+    void PushCharacters()
+    {
+        if (!ViewReady() || !PPM::RuntimeSupport::CharactersAvailable()) return;
+        const auto json = PPM::PhotoModeLists::BuildCharacterForms();
+        g_api->InteropCall(g_view, kCharactersCallback, json.c_str());
+    }
+
+    void PushPick()
+    {
+        if (!ViewReady() || !PPM::RuntimeSupport::CharactersAvailable()) return;
+        const auto json = PPM::PhotoModeLists::BuildPick(PPM::PhotoMode::PickedName());
+        g_api->InteropCall(g_view, kPickCallback, json.c_str());
+    }
+
     void SetFocus(bool a_focus)
     {
         if (!ViewReady()) return;
@@ -155,6 +171,7 @@ namespace
         PushLists();
         PushOverlays();
         PushFilters();
+        PushCharacters();
     }
 
     void ExitMode()
@@ -229,6 +246,24 @@ namespace
             PPM::PhotoMode::SetFilter(id);
         } else if (name == "filterstrength") {
             if (ParseFloat(value, number)) PPM::PhotoMode::SetFilterStrength(std::clamp(number, 0.0F, 1.0F));
+        } else if (name == "pick") {
+            PushPick();
+        } else if (name == "freeze") {
+            PPM::PhotoMode::SetPickedFrozen(value == "1");
+        } else if (name == "face") {
+            PPM::PhotoMode::FacePicked();
+        } else if (name == "idle") {
+            std::uint32_t id = 0;
+            ParseUnsigned(value, id);
+            PPM::PhotoMode::PlayIdleOnPick(id);
+        } else if (name == "art") {
+            std::uint32_t id = 0;
+            ParseUnsigned(value, id);
+            PPM::PhotoMode::ApplyArtToPick(id);
+        } else if (name == "shader") {
+            std::uint32_t id = 0;
+            ParseUnsigned(value, id);
+            PPM::PhotoMode::ApplyShaderToPick(id);
         } else if (name == "lists") {
             PushLists();
         } else if (name == "exit") {
@@ -250,6 +285,7 @@ namespace
         PushLists();
         PushOverlays();
         PushFilters();
+        PushCharacters();
     }
 
     class PhotoModeInput final : public RE::BSInputEventUser
@@ -324,6 +360,7 @@ namespace
             PPM::RuntimeSupport::ValidateTimeMappings(g_runtimeFamily);
             PPM::RuntimeSupport::ValidateDepthOfFieldMappings(g_runtimeFamily);
             PPM::RuntimeSupport::ValidateFilterMappings(g_runtimeFamily);
+            PPM::RuntimeSupport::ValidateCharacterMappings(g_runtimeFamily);
             g_api = PRISMA_UI_API::RequestPluginAPI<PRISMA_UI_API::IVPrismaUI10>();
             if (!g_api) {
                 spdlog::error("PrismaPhotoMode: PrismaUI_F4 V10 API unavailable; photo mode disabled");

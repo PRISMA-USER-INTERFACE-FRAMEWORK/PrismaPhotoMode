@@ -56,6 +56,15 @@ for name in (
     "Console::GetPickRefs",
     "ImageSpaceModifierInstanceForm::Trigger1",
     "ImageSpaceModifierInstanceForm::Stop1",
+    "Actor::InitiateDoNothingPackage",
+    "Actor::EndInterruptPackage",
+    "Actor::SetHeading",
+    "AIProcess::StopCurrentIdle",
+    "AIProcess::SetupSpecialIdle",
+    "TESObjectREFR::ApplyArtObject",
+    "TESObjectREFR::ApplyEffectShader",
+    "TESObjectREFR::GetHandle",
+    "TESObjectREFR::GetDisplayFullName",
 ):
     assert f'"{name}"' in runtime, f"RuntimeSupport.cpp must validate {name}"
 
@@ -91,6 +100,15 @@ for triple in (
     "875116, 2701391, 2701391",
     "179769, 2199906, 2199906",
     "217873, 2199909, 2199909",
+    "89993, 2229807, 2229807",
+    "575188, 2229892, 2229892",
+    "353571, 2229625, 2229625",
+    "434460, 2231705, 2231705",
+    "1446774, 2231704, 2231704",
+    "357908, 2205200, 2205200",
+    "652173, 2205201, 2205201",
+    "1573130, 2201196, 2201196",
+    "1212056, 2201126, 2201126",
 ):
     assert re.search(rf"REL::VariantID k\w+\{{ {re.escape(triple)} \}}", runtime), f"RuntimeSupport.cpp must carry the verified NG id triple {triple}"
 
@@ -103,5 +121,6 @@ assert "ValidateMappings" in main and "ValidateMappings(g_runtimeFamily)" in mai
 assert "ValidateTimeMappings(g_runtimeFamily)" in main, "main.cpp must gate the time controls through ValidateTimeMappings"
 assert "ValidateDepthOfFieldMappings(g_runtimeFamily)" in main, "main.cpp must gate depth of field through ValidateDepthOfFieldMappings"
 assert "ValidateFilterMappings(g_runtimeFamily)" in main, "main.cpp must gate filters through ValidateFilterMappings"
+assert "ValidateCharacterMappings(g_runtimeFamily)" in main, "main.cpp must gate characters through ValidateCharacterMappings"
 
 print("PrismaPhotoMode runtime and PrismaUI policy tests passed")
