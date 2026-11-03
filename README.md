@@ -13,6 +13,7 @@ Download the `PrismaPhotoMode` CI artifact from a successful run and extract `Pr
 ## What it does
 
 - A hotkey (default F9) enters and leaves photo mode in gameplay only.
+- The pause menu has a Photo Mode entry when the panel is ready. It is disabled while the Pip-Boy is open.
 - On entry the free camera turns on, game time freezes, the HUD hides, and the photo panel shows.
 - On exit the camera, time, HUD and field of view are restored to their values from before entry.
 - The panel has a field-of-view slider, a camera speed slider, and buttons for focus, screenshot, reset and exit.
