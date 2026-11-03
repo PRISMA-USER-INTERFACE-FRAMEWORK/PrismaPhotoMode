@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PrismaPhotoMode</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="fx-vignette" class="fx" hidden></div>
+  <div id="fx-tint" class="fx" hidden></div>
+  <div id="fx-grain" class="fx" hidden></div>
+  <div id="fx-frame" class="fx" hidden></div>
+  <div id="fx-letterbox-top" class="fx bar" hidden></div>
+  <div id="fx-letterbox-bottom" class="fx bar" hidden></div>
+  <div id="fx-letterbox-left" class="fx bar" hidden></div>
+  <div id="fx-letterbox-right" class="fx bar" hidden></div>
+  <div id="fx-grid" class="fx" hidden>
+    <span class="v v1"></span><span class="v v2"></span><span class="h h1"></span><span class="h h2"></span>
+  </div>
+
+  <button id="show-panel" type="button" hidden>Show panel</button>
+
+  <main id="panel">
+    <header>
+      <h1>Photo mode</h1>
+      <span id="focus-state">Camera</span>
+    </header>
+
+    <section>
+      <h2>Camera</h2>
+      <label>Field of view <output id="fov-out">75</output>
+        <input id="fov" type="range" min="5" max="150" step="1" value="75">
+      </label>
+      <label>Camera speed <output id="speed-out">1.00</output>
+        <input id="speed" type="range" min="0.1" max="50" step="0.1" value="1">
+      </label>
+      <button id="focus-btn" type="button">Take mouse</button>
+    </section>
+
+    <section>
+      <h2>Effects</h2>
+      <fieldset>
+        <label><input id="fx-grid-toggle" type="checkbox"> Rule-of-thirds grid</label>
+      </fieldset>
+      <fieldset>
+        <label><input id="fx-vignette-toggle" type="checkbox"> Vignette</label>
+        <label>Strength <output id="vignette-out">45</output>
+          <input id="vignette-strength" type="range" min="0" max="100" step="1" value="45">
+        </label>
+      </fieldset>
+      <fieldset>
+        <label><input id="fx-letterbox-toggle" type="checkbox"> Letterbox</label>
+        <label>Aspect
+          <select id="letterbox-aspect">
+            <option value="2.39">2.39:1</option>
+            <option value="2.35">2.35:1</option>
+            <option value="1.85">1.85:1</option>
+            <option value="1.78">16:9</option>
+            <option value="1.33">4:3</option>
+            <option value="1.00">1:1</option>
+          </select>
+        </label>
+      </fieldset>
+      <fieldset>
+        <label><input id="fx-tint-toggle" type="checkbox"> Colour tint</label>
+        <label>Colour <input id="tint-color" type="color" value="#c08040"></label>
+        <label>Opacity <output id="tint-out">20</output>
+          <input id="tint-opacity" type="range" min="0" max="100" step="1" value="20">
+        </label>
+      </fieldset>
+      <fieldset>
+        <label><input id="fx-grain-toggle" type="checkbox"> Film grain</label>
+        <label>Amount <output id="grain-out">35</output>
+          <input id="grain-amount" type="range" min="0" max="100" step="1" value="35">
+        </label>
+      </fieldset>
+      <fieldset>
+        <label><input id="fx-frame-toggle" type="checkbox"> Frame</label>
+        <label>Width <output id="frame-out">40</output>
+          <input id="frame-width" type="range" min="0" max="120" step="1" value="40">
+        </label>
+      </fieldset>
+      <button id="reset-effects-btn" type="button">Reset effects</button>
+    </section>
+
+    <section>
+      <h2>Capture</h2>
+      <button id="hide-panel-btn" type="button">Hide panel</button>
+      <button id="screenshot-btn" type="button">Take screenshot</button>
+      <button id="reset-btn" type="button">Reset camera</button>
+      <button id="exit-btn" type="button">Exit photo mode</button>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

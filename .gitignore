@@ -1,0 +1,12 @@
+.xmake/
+build/
+build-clang/
+__pycache__/
+dist/
+.vs/
+.vscode/
+*.user
+*.suo
+*.dll
+*.lib
+*.exp

@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prisma-photo-mode-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Checkout Prisma UI framework at pin
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: PRISMA-USER-INTERFACE-FRAMEWORK/Fallout-4-Prisma-UI-Framework
+          ref: 6d24db04225c378965ca2f4106286fea8333418e
+          path: .deps/prisma-ui-framework
+          persist-credentials: false
+
+      - name: Validate UI assets and runtime policies
+        env:
+          PRISMA_UI_FRAMEWORK_ROOT: ${{ github.workspace }}/.deps/prisma-ui-framework
+        run: python3 tools/ci.py checks
+
+  windows-build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Checkout CommonLibF4 at pin
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: G-A-R-D-E-N/commonlibf4-nomad
+          ref: 19a5e0dcae23491b2905e8e81ccf8f3c75ad96af
+          path: .deps/commonlibf4
+          persist-credentials: false
+
+      - name: Initialise CommonLibF4 shared submodule
+        shell: bash
+        run: git -C .deps/commonlibf4 submodule update --init --recursive -- lib/commonlib-shared
+
+      - name: Setup native Xmake
+        uses: xmake-io/github-action-setup-xmake@3a1a5dddfc7fa625d9a698738334bf55655a861a
+        with:
+          xmake-version: '3.0.4'
+
+      - name: Ensure LLVM for clang-cl
+        shell: pwsh
+        run: |
+          if (-not (Test-Path 'C:\Program Files\LLVM\bin\clang-cl.exe')) {
+            choco install llvm -y --no-progress
+          }
+
+      - name: Build PrismaPhotoMode.dll with Clang-CL
+        shell: bash
+        env:
+          COMMONLIBF4_PATH: ${{ github.workspace }}/.deps/commonlibf4
+        run: python tools/ci.py dll
+
+      - name: Upload built DLL
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: PrismaPhotoMode-dll
+          path: |
+            build-clang/windows/x64/release/PrismaPhotoMode.dll
+            build-clang/windows/x64/release/BUILD_PROVENANCE.txt
+          if-no-files-found: error
