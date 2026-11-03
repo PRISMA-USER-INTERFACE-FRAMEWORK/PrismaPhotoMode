@@ -11,7 +11,7 @@
     tint: { on: false, color: "#c08040", opacity: 20 },
     grain: { on: false, amount: 35 },
     frame: { on: false, width: 40 },
-    dof: { on: false, distance: 500, auto: false },
+    dof: { on: false, distance: 500, strength: 1, range: 300, auto: false },
   };
 
   const $ = (id) => document.getElementById(id);
@@ -111,8 +111,15 @@
     $("fx-dof-toggle").checked = DEFAULTS.dof.on;
     $("dof-distance").value = DEFAULTS.dof.distance;
     $("dof-distance-out").textContent = DEFAULTS.dof.distance;
+    $("dof-strength").value = DEFAULTS.dof.strength;
+    $("dof-strength-out").textContent = Number(DEFAULTS.dof.strength).toFixed(2);
+    $("dof-range").value = DEFAULTS.dof.range;
+    $("dof-range-out").textContent = DEFAULTS.dof.range;
     $("dof-auto").checked = DEFAULTS.dof.auto;
     command("dof|0");
+    command(`dofdist|${DEFAULTS.dof.distance}`);
+    command(`dofstrength|${DEFAULTS.dof.strength}`);
+    command(`dofrange|${DEFAULTS.dof.range}`);
     command("autofocus|0");
     $("filter-select").value = "";
     $("filter-strength").value = 1;
@@ -481,6 +488,14 @@
   $("dof-distance").addEventListener("input", (event) => {
     $("dof-distance-out").textContent = event.target.value;
     command(`dofdist|${event.target.value}`);
+  });
+  $("dof-strength").addEventListener("input", (event) => {
+    $("dof-strength-out").textContent = Number(event.target.value).toFixed(2);
+    command(`dofstrength|${event.target.value}`);
+  });
+  $("dof-range").addEventListener("input", (event) => {
+    $("dof-range-out").textContent = event.target.value;
+    command(`dofrange|${event.target.value}`);
   });
   $("dof-auto").addEventListener("change", (event) => command(`autofocus|${event.target.checked ? 1 : 0}`));
   setInterval(() => {

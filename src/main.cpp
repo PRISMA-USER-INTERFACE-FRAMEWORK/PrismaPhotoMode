@@ -58,6 +58,7 @@ namespace
     constexpr int kMaxPanelScale = 200;
     constexpr float kMinDofDistance = 50.0F;
     constexpr float kMaxDofDistance = 5000.0F;
+    constexpr float kMaxDofRange = 5000.0F;
 
     struct Settings
     {
@@ -238,6 +239,10 @@ namespace
             PPM::PhotoMode::SetDepthOfField(value == "1");
         } else if (name == "dofdist") {
             if (ParseFloat(value, number)) PPM::PhotoMode::SetDepthOfFieldDistance(std::clamp(number, kMinDofDistance, kMaxDofDistance));
+        } else if (name == "dofstrength") {
+            if (ParseFloat(value, number)) PPM::PhotoMode::SetDepthOfFieldStrength(std::clamp(number, 0.0F, 1.0F));
+        } else if (name == "dofrange") {
+            if (ParseFloat(value, number)) PPM::PhotoMode::SetDepthOfFieldRange(std::clamp(number, 0.0F, kMaxDofRange));
         } else if (name == "autofocus") {
             PPM::PhotoMode::SetAutoFocus(value == "1");
         } else if (name == "filter") {

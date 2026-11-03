@@ -27,6 +27,8 @@ namespace PPM::PhotoMode
 
     void SetDepthOfField(bool a_on);
     void SetDepthOfFieldDistance(float a_distance);
+    void SetDepthOfFieldStrength(float a_strength);
+    void SetDepthOfFieldRange(float a_range);
     void SetAutoFocus(bool a_on);
 
     void SetFilter(std::uint32_t a_formID);

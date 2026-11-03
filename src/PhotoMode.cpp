@@ -60,13 +60,16 @@ namespace PPM::PhotoMode
         bool g_weatherForced{ false };
 
         constexpr float kDefaultDofDistance = 500.0F;
-        constexpr float kDofRange = 300.0F;
+        constexpr float kDefaultDofRange = 300.0F;
+        constexpr float kDefaultDofStrength = 1.0F;
         constexpr float kDofDuration = 1.0e6F;
         constexpr float kDofRetriggerDistance = 1.0F;
 
         RE::NiPointer<RE::ImageSpaceModifierInstanceDOF> g_dof{};
         float g_dofAppliedDistance{ 0.0F };
         float g_dofDistance{ kDefaultDofDistance };
+        float g_dofRange{ kDefaultDofRange };
+        float g_dofStrength{ kDefaultDofStrength };
         bool g_dofOn{ false };
         bool g_autoFocus{ false };
 
@@ -98,11 +101,11 @@ namespace PPM::PhotoMode
             StopDepthOfField();
             g_dof = RE::ImageSpaceModifierInstanceDOF::Trigger(
                 distance,
-                kDofRange,
+                g_dofRange,
                 0.0F,
                 0.0F,
                 RE::ImageSpaceModifierInstanceDOF::DepthOfFieldMode::kFrontBack,
-                1.0F,
+                g_dofStrength,
                 kDofDuration);
             g_dofAppliedDistance = distance;
         }
@@ -113,6 +116,8 @@ namespace PPM::PhotoMode
             g_dofOn = false;
             g_autoFocus = false;
             g_dofDistance = kDefaultDofDistance;
+            g_dofRange = kDefaultDofRange;
+            g_dofStrength = kDefaultDofStrength;
         }
 
         constexpr float kDefaultFilterStrength = 1.0F;
@@ -423,6 +428,18 @@ namespace PPM::PhotoMode
     {
         g_dofDistance = a_distance;
         ApplyDepthOfField();
+    }
+
+    void SetDepthOfFieldStrength(float a_strength)
+    {
+        g_dofStrength = a_strength;
+        if (g_dof) g_dof->strength = a_strength;
+    }
+
+    void SetDepthOfFieldRange(float a_range)
+    {
+        g_dofRange = a_range;
+        if (g_dof) g_dof->data.depthOfField.range = a_range;
     }
 
     void SetAutoFocus(bool a_on)

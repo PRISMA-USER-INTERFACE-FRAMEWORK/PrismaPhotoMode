@@ -16,11 +16,11 @@ REQUIRED_IDS = (
     "fx-letterbox-top", "fx-letterbox-bottom", "fx-letterbox-left", "fx-letterbox-right",
     "overlay-category", "overlay-name", "fx-overlay", "grid-kind", "time-freeze", "timemult", "timemult-out", "hour", "hour-out", "timescale", "timescale-out",
     "weather-select", "weather-clear-btn", "panel-scale", "panel-scale-out",
-    "fx-dof-toggle", "dof-distance", "dof-distance-out", "dof-auto",
+    "fx-dof-toggle", "dof-distance", "dof-distance-out", "dof-strength", "dof-strength-out", "dof-range", "dof-range-out", "dof-auto",
     "filter-select", "filter-strength", "filter-strength-out",
     "pick-name", "freeze-btn", "release-btn", "face-btn", "idle-select", "idle-btn", "art-select", "art-btn", "shader-select", "shader-btn",
 )
-NATIVE_COMMANDS = ("fov", "speed", "focus", "screenshot", "reset", "exit", "freeze", "timemult", "hour", "timescale", "weather", "lists", "dof", "dofdist", "autofocus", "filter", "filterstrength", "pick", "pickfreeze", "face", "idle", "art", "shader")
+NATIVE_COMMANDS = ("fov", "speed", "focus", "screenshot", "reset", "exit", "freeze", "timemult", "hour", "timescale", "weather", "lists", "dof", "dofdist", "dofstrength", "dofrange", "autofocus", "filter", "filterstrength", "pick", "pickfreeze", "face", "idle", "art", "shader")
 KEPT_OVERLAYS = ("#fx-vignette", "#fx-tint", "#fx-grain", "#fx-frame", "#fx-letterbox")
 
 
