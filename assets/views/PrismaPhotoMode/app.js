@@ -72,8 +72,6 @@
     const left = $("fx-letterbox-left");
     const right = $("fx-letterbox-right");
     [top, bottom, left, right].forEach((bar) => {
-      bar.style.width = "0px";
-      bar.style.height = "0px";
       bar.hidden = true;
     });
     if (!enabled) return;
