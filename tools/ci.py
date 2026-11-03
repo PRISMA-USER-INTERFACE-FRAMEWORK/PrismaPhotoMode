@@ -39,8 +39,10 @@ if stage == "checks":
     if not node:
         raise SystemExit("Node.js is required for the app.js syntax check")
     subprocess.run([node, "--check", str(root / "assets/views/PrismaPhotoMode/app.js")], check=True)
+    subprocess.run([node, "--check", str(root / "assets/views/PrismaPhotoMode/preview.js")], check=True)
     subprocess.run([node, str(root / "tests/letterbox.test.js")], check=True)
     subprocess.run([node, str(root / "tests/ui_polling.test.js")], check=True)
+    subprocess.run([node, str(root / "tests/preview.test.js")], check=True)
     subprocess.run([sys.executable, "-X", "utf8", "tests/run_checks.py"], cwd=root, env=env, check=True)
     subprocess.run([sys.executable, "-X", "utf8", "tests/test_ci_guards.py"], cwd=root, env=env, check=True)
     print("PrismaPhotoMode asset and runtime policy checks PASS")

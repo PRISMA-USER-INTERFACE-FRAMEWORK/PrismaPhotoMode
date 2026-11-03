@@ -158,6 +158,8 @@ body {
 }
 
 #show-panel {
+  -webkit-user-select: none;
+  user-select: none;
   position: fixed;
   top: 32px;
   right: 32px;
@@ -171,6 +173,8 @@ body {
 }
 
 #panel {
+  -webkit-user-select: none;
+  user-select: none;
   position: fixed;
   top: 50%;
   right: 24px;
