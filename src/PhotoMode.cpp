@@ -9,6 +9,7 @@
 #include <RE/C/ControlMap.h>
 #include <RE/H/HUDModeType.h>
 #include <RE/I/ImageSpaceModifierInstanceDOF.h>
+#include <RE/I/ImageSpaceModifierInstanceForm.h>
 #include <RE/M/Main.h>
 #include <RE/M/MenuControls.h>
 #include <RE/P/PlayerCamera.h>
@@ -16,6 +17,7 @@
 #include <RE/S/Setting.h>
 #include <RE/S/Sky.h>
 #include <RE/T/TESDataHandler.h>
+#include <RE/T/TESImageSpaceModifier.h>
 #include <RE/T/TESWeather.h>
 #include <RE/U/UserEvents.h>
 
@@ -105,6 +107,35 @@ namespace PPM::PhotoMode
             g_dofOn = false;
             g_autoFocus = false;
             g_dofDistance = kDefaultDofDistance;
+        }
+
+        constexpr float kDefaultFilterStrength = 1.0F;
+
+        RE::TESImageSpaceModifier* g_filter{ nullptr };
+        float g_filterStrength{ kDefaultFilterStrength };
+
+        RE::TESImageSpaceModifier* FindModifier(std::uint32_t a_formID)
+        {
+            if (!RuntimeSupport::FiltersAvailable() || !a_formID) return nullptr;
+            auto* handler = RE::TESDataHandler::GetSingleton();
+            if (!handler) return nullptr;
+            for (auto* modifier : handler->GetFormArray<RE::TESImageSpaceModifier>()) {
+                if (modifier && modifier->GetFormID() == a_formID) return modifier;
+            }
+            return nullptr;
+        }
+
+        void StopFilter()
+        {
+            if (!g_filter) return;
+            RE::ImageSpaceModifierInstanceForm::Stop(g_filter);
+            g_filter = nullptr;
+        }
+
+        void ResetFilter()
+        {
+            StopFilter();
+            g_filterStrength = kDefaultFilterStrength;
         }
 
         bool IsFreeCamera(RE::PlayerCamera* a_camera)
@@ -220,6 +251,7 @@ namespace PPM::PhotoMode
         ReleaseWeather();
         RestoreTime();
         ResetDepthOfField();
+        ResetFilter();
         SetFOV(g_snapshot.fov);
         SetTranslateSpeed(g_snapshot.translateSpeed);
         RE::SendHUDMessage::PopHUDMode(RE::HUDModeType(kHudMode));
@@ -346,5 +378,26 @@ namespace PPM::PhotoMode
     {
         g_autoFocus = a_on;
         ApplyDepthOfField();
+    }
+
+    void SetFilter(std::uint32_t a_formID)
+    {
+        if (!g_active || !RuntimeSupport::FiltersAvailable()) return;
+        StopFilter();
+        if (!a_formID) return;
+        g_filter = FindModifier(a_formID);
+        if (!g_filter) {
+            spdlog::warn("PrismaPhotoMode: image space modifier {:X} is not a known form", a_formID);
+            return;
+        }
+        RE::ImageSpaceModifierInstanceForm::Trigger(g_filter, g_filterStrength, nullptr);
+    }
+
+    void SetFilterStrength(float a_strength)
+    {
+        g_filterStrength = a_strength;
+        if (!g_filter) return;
+        RE::ImageSpaceModifierInstanceForm::Stop(g_filter);
+        RE::ImageSpaceModifierInstanceForm::Trigger(g_filter, g_filterStrength, nullptr);
     }
 }

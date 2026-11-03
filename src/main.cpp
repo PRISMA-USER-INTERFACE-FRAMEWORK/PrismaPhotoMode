@@ -39,6 +39,7 @@ namespace
     constexpr char kStateCallback[] = "pmSetState";
     constexpr char kListsCallback[] = "pmSetLists";
     constexpr char kOverlaysCallback[] = "pmSetOverlays";
+    constexpr char kFiltersCallback[] = "pmSetFilters";
     constexpr float kMinFOV = 5.0F;
     constexpr float kMaxFOV = 150.0F;
     constexpr float kMinSpeed = 0.1F;
@@ -128,6 +129,13 @@ namespace
         g_api->InteropCall(g_view, kOverlaysCallback, json.c_str());
     }
 
+    void PushFilters()
+    {
+        if (!ViewReady() || !PPM::RuntimeSupport::FiltersAvailable()) return;
+        const auto json = PPM::PhotoModeLists::BuildFilters();
+        g_api->InteropCall(g_view, kFiltersCallback, json.c_str());
+    }
+
     void SetFocus(bool a_focus)
     {
         if (!ViewReady()) return;
@@ -146,6 +154,7 @@ namespace
         PushState();
         PushLists();
         PushOverlays();
+        PushFilters();
     }
 
     void ExitMode()
@@ -214,6 +223,12 @@ namespace
             if (ParseFloat(value, number)) PPM::PhotoMode::SetDepthOfFieldDistance(std::clamp(number, kMinDofDistance, kMaxDofDistance));
         } else if (name == "autofocus") {
             PPM::PhotoMode::SetAutoFocus(value == "1");
+        } else if (name == "filter") {
+            std::uint32_t id = 0;
+            ParseUnsigned(value, id);
+            PPM::PhotoMode::SetFilter(id);
+        } else if (name == "filterstrength") {
+            if (ParseFloat(value, number)) PPM::PhotoMode::SetFilterStrength(std::clamp(number, 0.0F, 1.0F));
         } else if (name == "lists") {
             PushLists();
         } else if (name == "exit") {
@@ -234,6 +249,7 @@ namespace
         PushState();
         PushLists();
         PushOverlays();
+        PushFilters();
     }
 
     class PhotoModeInput final : public RE::BSInputEventUser
@@ -307,6 +323,7 @@ namespace
             }
             PPM::RuntimeSupport::ValidateTimeMappings(g_runtimeFamily);
             PPM::RuntimeSupport::ValidateDepthOfFieldMappings(g_runtimeFamily);
+            PPM::RuntimeSupport::ValidateFilterMappings(g_runtimeFamily);
             g_api = PRISMA_UI_API::RequestPluginAPI<PRISMA_UI_API::IVPrismaUI10>();
             if (!g_api) {
                 spdlog::error("PrismaPhotoMode: PrismaUI_F4 V10 API unavailable; photo mode disabled");

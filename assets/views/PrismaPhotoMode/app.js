@@ -114,6 +114,10 @@
     $("dof-auto").checked = DEFAULTS.dof.auto;
     command("dof|0");
     command("autofocus|0");
+    $("filter-select").value = "";
+    $("filter-strength").value = 1;
+    $("filter-strength-out").textContent = "1.00";
+    command("filter|0");
     applyEffects();
   }
 
@@ -257,6 +261,26 @@
     setWeatherOptions(Array.isArray(data.weathers) ? data.weathers : []);
   };
 
+  function setFilterOptions(filters) {
+    const select = $("filter-select");
+    const current = select.value;
+    select.textContent = "";
+    select.add(new Option("None", ""));
+    filters.forEach((filter) => select.add(new Option(filter.name, String(filter.id))));
+    select.value = current;
+  }
+
+  window.pmSetFilters = (payload) => {
+    let data;
+    try {
+      data = JSON.parse(payload);
+    } catch (error) {
+      console.error("pmSetFilters: bad payload", error);
+      return;
+    }
+    setFilterOptions(Array.isArray(data.filters) ? data.filters : []);
+  };
+
   $("fov").addEventListener("input", (event) => {
     $("fov-out").textContent = event.target.value;
     command(`fov|${event.target.value}`);
@@ -298,6 +322,11 @@
   $("weather-select").addEventListener("change", (event) => command(`weather|${event.target.value}`));
   $("overlay-category").addEventListener("change", (event) => setOverlayNames(event.target.value));
   $("overlay-name").addEventListener("change", applyOverlay);
+  $("filter-select").addEventListener("change", (event) => command(`filter|${event.target.value || 0}`));
+  $("filter-strength").addEventListener("input", (event) => {
+    $("filter-strength-out").textContent = Number(event.target.value).toFixed(2);
+    command(`filterstrength|${event.target.value}`);
+  });
   $("weather-clear-btn").addEventListener("click", () => {
     $("weather-select").value = "";
     command("weather|0");

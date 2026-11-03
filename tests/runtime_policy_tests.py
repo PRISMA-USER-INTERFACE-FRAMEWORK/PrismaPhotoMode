@@ -54,6 +54,8 @@ for name in (
     "PlayerCamera::GetCameraPosition",
     "Console::GetCurrentPickIndex",
     "Console::GetPickRefs",
+    "ImageSpaceModifierInstanceForm::Trigger1",
+    "ImageSpaceModifierInstanceForm::Stop1",
 ):
     assert f'"{name}"' in runtime, f"RuntimeSupport.cpp must validate {name}"
 
@@ -87,6 +89,8 @@ for triple in (
     "1574794, 2248334, 2248334",
     "1407033, 2701382, 2701382",
     "875116, 2701391, 2701391",
+    "179769, 2199906, 2199906",
+    "217873, 2199909, 2199909",
 ):
     assert re.search(rf"REL::VariantID k\w+\{{ {re.escape(triple)} \}}", runtime), f"RuntimeSupport.cpp must carry the verified NG id triple {triple}"
 
@@ -98,5 +102,6 @@ assert "enum class Family" in runtime_header
 assert "ValidateMappings" in main and "ValidateMappings(g_runtimeFamily)" in main
 assert "ValidateTimeMappings(g_runtimeFamily)" in main, "main.cpp must gate the time controls through ValidateTimeMappings"
 assert "ValidateDepthOfFieldMappings(g_runtimeFamily)" in main, "main.cpp must gate depth of field through ValidateDepthOfFieldMappings"
+assert "ValidateFilterMappings(g_runtimeFamily)" in main, "main.cpp must gate filters through ValidateFilterMappings"
 
 print("PrismaPhotoMode runtime and PrismaUI policy tests passed")

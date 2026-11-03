@@ -6,4 +6,5 @@ namespace PPM::PhotoModeLists
 {
     [[nodiscard]] std::string Build();
     [[nodiscard]] std::string BuildOverlays();
+    [[nodiscard]] std::string BuildFilters();
 }

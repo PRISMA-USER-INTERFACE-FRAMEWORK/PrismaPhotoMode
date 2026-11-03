@@ -1,6 +1,7 @@
 #include "PhotoModeLists.h"
 
 #include <RE/T/TESDataHandler.h>
+#include <RE/T/TESImageSpaceModifier.h>
 #include <RE/T/TESWeather.h>
 
 #include <algorithm>
@@ -52,6 +53,11 @@ namespace PPM::PhotoModeLists
     std::string Build()
     {
         return std::string{ R"({"weathers":)" } + FormArray<RE::TESWeather>() + "}";
+    }
+
+    std::string BuildFilters()
+    {
+        return std::string{ R"({"filters":)" } + FormArray<RE::TESImageSpaceModifier>() + "}";
     }
 
     std::string BuildOverlays()

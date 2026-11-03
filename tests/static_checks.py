@@ -17,8 +17,9 @@ REQUIRED_IDS = (
     "overlay-category", "overlay-name", "fx-overlay", "grid-kind", "time-freeze", "timemult", "timemult-out", "hour", "hour-out", "timescale", "timescale-out",
     "weather-select", "weather-clear-btn", "panel-scale", "panel-scale-out",
     "fx-dof-toggle", "dof-distance", "dof-distance-out", "dof-auto",
+    "filter-select", "filter-strength", "filter-strength-out",
 )
-NATIVE_COMMANDS = ("fov", "speed", "focus", "screenshot", "reset", "exit", "freeze", "timemult", "hour", "timescale", "weather", "lists", "dof", "dofdist", "autofocus")
+NATIVE_COMMANDS = ("fov", "speed", "focus", "screenshot", "reset", "exit", "freeze", "timemult", "hour", "timescale", "weather", "lists", "dof", "dofdist", "autofocus", "filter", "filterstrength")
 KEPT_OVERLAYS = ("#fx-vignette", "#fx-tint", "#fx-grain", "#fx-frame", "#fx-letterbox")
 
 
@@ -59,6 +60,8 @@ def check(root: Path) -> None:
         raise SystemExit("app.js must expose window.pmSetOverlays")
     if "window.pmSetLists" not in app:
         raise SystemExit("app.js must expose window.pmSetLists")
+    if "window.pmSetFilters" not in app:
+        raise SystemExit("app.js must expose window.pmSetFilters")
     if '"pm_command"' not in app:
         raise SystemExit("app.js must call the pm_command listener")
 
@@ -83,6 +86,8 @@ def check(root: Path) -> None:
         raise SystemExit(f"main.cpp does not handle commands: {', '.join(missing)}")
     if 'kCommandListener[] = "pm_command"' not in main or 'kStateCallback[] = "pmSetState"' not in main:
         raise SystemExit("main.cpp listener and state names must match app.js")
+    if 'kFiltersCallback[] = "pmSetFilters"' not in main:
+        raise SystemExit("main.cpp filters callback name must match app.js")
 
 
 if __name__ == "__main__":

@@ -47,6 +47,8 @@ namespace PPM::RuntimeSupport
         constexpr REL::VariantID kGetCameraPosition{ 1574794, 2248334, 2248334 };
         constexpr REL::VariantID kGetCurrentPickIndex{ 1407033, 2701382, 2701382 };
         constexpr REL::VariantID kGetPickRefs{ 875116, 2701391, 2701391 };
+        constexpr REL::VariantID kFilterTrigger{ 179769, 2199906, 2199906 };
+        constexpr REL::VariantID kFilterStop{ 217873, 2199909, 2199909 };
 
         const std::array kCoreMappings{
             Mapping{ "PlayerCamera::ToggleFreeCameraMode", &kToggleFreeCameraMode, Kind::Function },
@@ -78,7 +80,14 @@ namespace PPM::RuntimeSupport
         };
 
         bool g_timeControlsAvailable{ false };
+        const std::array kFilterMappings{
+            Mapping{ "ImageSpaceModifierInstanceForm::Trigger1", &kFilterTrigger, Kind::Function },
+            Mapping{ "ImageSpaceModifierInstanceForm::Stop1", &kFilterStop, Kind::Function },
+            Mapping{ "TESDataHandler::Singleton", &kTESDataHandlerSingleton, Kind::Global }
+        };
+
         bool g_depthOfFieldAvailable{ false };
+        bool g_filtersAvailable{ false };
 
         bool ResolveMappings(std::span<const Mapping> a_mappings, Family a_family)
         {
@@ -172,5 +181,15 @@ namespace PPM::RuntimeSupport
     bool DepthOfFieldAvailable() noexcept
     {
         return g_depthOfFieldAvailable;
+    }
+
+    void ValidateFilterMappings(Family a_family)
+    {
+        g_filtersAvailable = ResolveMappings(kFilterMappings, a_family);
+    }
+
+    bool FiltersAvailable() noexcept
+    {
+        return g_filtersAvailable;
     }
 }

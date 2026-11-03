@@ -22,4 +22,6 @@ namespace PPM::RuntimeSupport
     [[nodiscard]] bool TimeControlsAvailable() noexcept;
     void ValidateDepthOfFieldMappings(Family family);
     [[nodiscard]] bool DepthOfFieldAvailable() noexcept;
+    void ValidateFilterMappings(Family family);
+    [[nodiscard]] bool FiltersAvailable() noexcept;
 }
